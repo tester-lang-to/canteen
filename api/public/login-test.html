@@ -1,0 +1,64 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Canteen Login Test</title>
+</head>
+<body>
+  <h2>Canteen Login Test</h2>
+
+  <form id="loginForm">
+    <p>
+      <label>Username</label><br>
+      <input id="username" value="admin1" autocomplete="username" required>
+    </p>
+
+    <p>
+      <label>Password</label><br>
+      <input id="password" type="password"
+             autocomplete="current-password" required>
+    </p>
+
+    <button type="submit">Test Login</button>
+  </form>
+
+  <pre id="result">Ready to test.</pre>
+
+  <script>
+    const form = document.getElementById("loginForm");
+    const result = document.getElementById("result");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      result.textContent = "Testing login...";
+
+      try {
+        const response = await fetch("/api/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            username: document.getElementById("username").value,
+            password: document.getElementById("password").value
+          })
+        });
+
+        const data = await response.json();
+        result.textContent = JSON.stringify({
+          httpStatus: response.status,
+          success: data.success,
+          message: data.message,
+          user: data.user
+        }, null, 2);
+      } catch (error) {
+        result.textContent =
+          "Request failed. Check that the API server is running.";
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,782 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Log Viewer | Canteen System</title>
+
+    <style>
+        :root {
+            --navy: #14243b;
+            --blue: #2563eb;
+            --bg: #f3f6fb;
+            --border: #e2e8f0;
+            --text: #172033;
+            --muted: #64748b;
+            --white: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        header {
+            background: var(--navy);
+            color: white;
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        header p {
+            margin: 6px 0 0;
+            color: #cbd5e1;
+            font-size: 13px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        button, .nav-link {
+            border: 0;
+            border-radius: 7px;
+            padding: 10px 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .nav-link {
+            background: #33465f;
+            color: white;
+        }
+
+        .logout {
+            background: #dc2626;
+            color: white;
+        }
+
+        main {
+            max-width: 1500px;
+            margin: 26px auto;
+            padding: 0 20px;
+        }
+
+        .panel {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04);
+        }
+
+        .panel h2 {
+            margin: 0 0 6px;
+            font-size: 18px;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(130px, 1fr));
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        input, select {
+            width: 100%;
+            min-width: 0;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            background: white;
+            color: var(--text);
+            font-size: 13px;
+        }
+
+        input:focus, select:focus {
+            outline: 2px solid #bfdbfe;
+            border-color: var(--blue);
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 8px;
+            align-items: end;
+            flex-wrap: wrap;
+            margin-top: 14px;
+        }
+
+        .primary {
+            background: var(--blue);
+            color: white;
+        }
+
+        .secondary {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .stat {
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            padding: 15px;
+        }
+
+        .stat-label {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 7px;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            margin-top: 18px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 5px 8px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .create {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .update {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .delete {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .other {
+            background: #f1f5f9;
+            color: #334155;
+        }
+
+        .details-btn {
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 7px 10px;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 14px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .error {
+            display: block;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .info {
+            display: block;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        .page-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .page-buttons button:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+        dialog {
+            width: min(700px, calc(100% - 28px));
+            border: 0;
+            border-radius: 12px;
+            padding: 0;
+            box-shadow: 0 20px 60px #0004;
+        }
+
+        dialog::backdrop {
+            background: #0f172a99;
+        }
+
+        .modal-header, .modal-body, .modal-footer {
+            padding: 18px 20px;
+        }
+
+        .modal-header {
+            background: var(--navy);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 17px;
+        }
+
+        .modal-body pre {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            max-height: 45vh;
+            overflow: auto;
+            font-size: 12px;
+        }
+
+        .modal-footer {
+            border-top: 1px solid var(--border);
+            text-align: right;
+        }
+
+        @media (max-width: 950px) {
+            .filters {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 550px) {
+            header {
+                padding: 16px;
+            }
+
+            main {
+                padding: 0 12px;
+                margin-top: 15px;
+            }
+
+            .panel {
+                padding: 14px;
+            }
+
+            .filters, .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<header>
+    <div>
+        <h1>Audit Log Viewer</h1>
+        <p>Canteen Management System · Administrative activity history</p>
+    </div>
+
+    <div class="header-actions">
+        <a class="nav-link" href="/dashboard.html">Dashboard</a>
+        <button class="logout" id="logoutBtn">Logout</button>
+    </div>
+</header>
+
+<main>
+    <section class="panel">
+        <h2>Audit Overview</h2>
+        <p class="muted">Review recorded actions performed by administrators and canteen operators.</p>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Matching Records</div>
+                <div class="stat-value" id="totalRecords">—</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Current Page</div>
+                <div class="stat-value" id="currentPage">—</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Total Pages</div>
+                <div class="stat-value" id="totalPages">—</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Search and Filters</h2>
+
+        <div class="filters">
+            <div>
+                <label for="searchInput">Search</label>
+                <input id="searchInput" type="search"
+                       placeholder="ID, username, details...">
+            </div>
+
+            <div>
+                <label for="actionFilter">Action</label>
+                <select id="actionFilter">
+                    <option value="">All actions</option>
+                    <option value="CREATE">CREATE</option>
+                    <option value="UPDATE">UPDATE</option>
+                    <option value="DELETE">DELETE</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="entityFilter">Entity Type</label>
+                <select id="entityFilter">
+                    <option value="">All entities</option>
+                    <option value="WeeklyMealPlan">WeeklyMealPlan</option>
+                    <option value="MEAL_CLAIM">MEAL_CLAIM</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="dateFrom">Date From</label>
+                <input id="dateFrom" type="date">
+            </div>
+
+            <div>
+                <label for="dateTo">Date To</label>
+                <input id="dateTo" type="date">
+            </div>
+        </div>
+
+        <div class="filter-actions">
+            <button class="primary" id="searchBtn">Apply Filters</button>
+            <button class="secondary" id="resetBtn">Reset</button>
+            <button class="secondary" id="refreshBtn">Refresh</button>
+        </div>
+
+        <div id="status" class="status" role="status"></div>
+    </section>
+
+    <section class="panel">
+        <h2>Audit History</h2>
+        <p class="muted">Newest records appear first. Select Details to inspect the full record.</p>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Log ID</th>
+                        <th>Date and Time</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Entity</th>
+                        <th>Record ID</th>
+                        <th>IP Address</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody id="logsBody">
+                    <tr>
+                        <td colspan="8">Loading audit records...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <div class="muted" id="pageInfo">Loading...</div>
+            <div class="page-buttons">
+                <button class="secondary" id="prevBtn" disabled>Previous</button>
+                <button class="secondary" id="nextBtn" disabled>Next</button>
+            </div>
+        </div>
+    </section>
+</main>
+
+<dialog id="detailsDialog">
+    <div class="modal-header">
+        <h2 id="detailsTitle">Audit Details</h2>
+        <button class="secondary" id="closeDialogTop">Close</button>
+    </div>
+    <div class="modal-body">
+        <div id="detailsMetadata" class="muted"></div>
+        <pre id="detailsJson"></pre>
+    </div>
+    <div class="modal-footer">
+        <button class="secondary" id="closeDialogBottom">Close</button>
+    </div>
+</dialog>
+
+<script>
+    const logsBody = document.getElementById("logsBody");
+    const statusBox = document.getElementById("status");
+
+    const searchInput = document.getElementById("searchInput");
+    const actionFilter = document.getElementById("actionFilter");
+    const entityFilter = document.getElementById("entityFilter");
+    const dateFrom = document.getElementById("dateFrom");
+    const dateTo = document.getElementById("dateTo");
+
+    const detailsDialog = document.getElementById("detailsDialog");
+
+    let currentPageNumber = 1;
+    const pageSize = 25;
+    let currentTotalPages = 0;
+    let requestNumber = 0;
+
+    function showStatus(message, type = "info") {
+        statusBox.textContent = message;
+        statusBox.className = "status " + type;
+    }
+
+    function clearStatus() {
+        statusBox.textContent = "";
+        statusBox.className = "status";
+    }
+
+    function addCell(row, value) {
+        const cell = document.createElement("td");
+        cell.textContent = value === null || value === undefined || value === ""
+            ? "—"
+            : String(value);
+        row.appendChild(cell);
+        return cell;
+    }
+
+    function makeActionPill(action) {
+        const pill = document.createElement("span");
+        pill.className = "pill " + (
+            action === "CREATE" ? "create" :
+            action === "UPDATE" ? "update" :
+            action === "DELETE" ? "delete" : "other"
+        );
+        pill.textContent = action || "UNKNOWN";
+        return pill;
+    }
+
+    function formatDate(value) {
+        if (!value) return "—";
+
+        // Keep the server's local MySQL timestamp visible as provided.
+        return String(value);
+    }
+
+    function showDetails(log) {
+        document.getElementById("detailsTitle").textContent =
+            "Audit Log #" + log.AuditLogID;
+
+        document.getElementById("detailsMetadata").textContent =
+            "User: " + (log.Username || log.ExternalActor || "Unknown") +
+            " | Action: " + (log.Action || "—") +
+            " | Entity: " + (log.EntityType || "—") +
+            " | Record ID: " + (log.EntityID || "—") +
+            " | Time: " + formatDate(log.CreatedAt);
+
+        let details = log.Details;
+
+        if (typeof details === "string") {
+            try {
+                details = JSON.parse(details);
+            } catch {
+                // Keep original details if they aren't JSON.
+            }
+        }
+
+        document.getElementById("detailsJson").textContent =
+            JSON.stringify({
+                AuditLogID: log.AuditLogID,
+                UserID: log.UserID,
+                Username: log.Username,
+                ExternalActor: log.ExternalActor,
+                Action: log.Action,
+                EntityType: log.EntityType,
+                EntityID: log.EntityID,
+                IPAddress: log.IPAddress,
+                CreatedAt: log.CreatedAt,
+                Details: details
+            }, null, 2);
+
+        detailsDialog.showModal();
+    }
+
+    async function loadLogs() {
+        const thisRequest = ++requestNumber;
+        clearStatus();
+
+        if (dateFrom.value && dateTo.value && dateFrom.value > dateTo.value) {
+            showStatus("Date From cannot be later than Date To.", "error");
+            return;
+        }
+
+        logsBody.replaceChildren();
+
+        const loadingRow = document.createElement("tr");
+        const loadingCell = document.createElement("td");
+        loadingCell.colSpan = 8;
+        loadingCell.textContent = "Loading audit records...";
+        loadingRow.appendChild(loadingCell);
+        logsBody.appendChild(loadingRow);
+
+        const params = new URLSearchParams({
+            page: String(currentPageNumber),
+            limit: String(pageSize)
+        });
+
+        if (searchInput.value.trim()) {
+            params.set("search", searchInput.value.trim());
+        }
+
+        if (actionFilter.value) {
+            params.set("action", actionFilter.value);
+        }
+
+        if (entityFilter.value) {
+            params.set("entityType", entityFilter.value);
+        }
+
+        if (dateFrom.value) {
+            params.set("dateFrom", dateFrom.value);
+        }
+
+        if (dateTo.value) {
+            params.set("dateTo", dateTo.value);
+        }
+
+        try {
+            const response = await fetch(
+                "/api/admin/audit-logs?" + params.toString(),
+                { credentials: "same-origin" }
+            );
+
+            const data = await response.json();
+
+            if (thisRequest !== requestNumber) return;
+
+            if (response.status === 401 || response.status === 403) {
+                logsBody.replaceChildren();
+                showStatus(
+                    "Access denied or session expired. Sign in with an admin account and reload this page.",
+                    "error"
+                );
+                return;
+            }
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || "Unable to load audit logs.");
+            }
+
+            logsBody.replaceChildren();
+
+            const logs = Array.isArray(data.logs) ? data.logs : [];
+            const pagination = data.pagination || {};
+
+            document.getElementById("totalRecords").textContent =
+                pagination.total ?? 0;
+
+            document.getElementById("currentPage").textContent =
+                pagination.page ?? currentPageNumber;
+
+            document.getElementById("totalPages").textContent =
+                pagination.totalPages ?? 0;
+
+            currentTotalPages = pagination.totalPages || 0;
+
+            if (logs.length === 0) {
+                const row = document.createElement("tr");
+                const cell = document.createElement("td");
+                cell.colSpan = 8;
+                cell.textContent = "No audit records found for these filters.";
+                row.appendChild(cell);
+                logsBody.appendChild(row);
+            } else {
+                for (const log of logs) {
+                    const row = document.createElement("tr");
+
+                    addCell(row, log.AuditLogID);
+                    addCell(row, formatDate(log.CreatedAt));
+                    addCell(row, log.Username || log.ExternalActor || "Unknown");
+
+                    const actionCell = document.createElement("td");
+                    actionCell.appendChild(makeActionPill(log.Action));
+                    row.appendChild(actionCell);
+
+                    addCell(row, log.EntityType);
+                    addCell(row, log.EntityID);
+                    addCell(row, log.IPAddress);
+
+                    const detailsCell = document.createElement("td");
+                    const detailsButton = document.createElement("button");
+                    detailsButton.className = "details-btn";
+                    detailsButton.textContent = "View Details";
+                    detailsButton.addEventListener("click", () => showDetails(log));
+                    detailsCell.appendChild(detailsButton);
+                    row.appendChild(detailsCell);
+
+                    logsBody.appendChild(row);
+                }
+            }
+
+            document.getElementById("pageInfo").textContent =
+                `Page ${pagination.page || 1} of ${pagination.totalPages || 0} · ` +
+                `${pagination.total || 0} matching records`;
+
+            document.getElementById("prevBtn").disabled =
+                !pagination.page || pagination.page <= 1;
+
+            document.getElementById("nextBtn").disabled =
+                !pagination.totalPages ||
+                pagination.page >= pagination.totalPages;
+
+        } catch (error) {
+            if (thisRequest !== requestNumber) return;
+
+            logsBody.replaceChildren();
+
+            const row = document.createElement("tr");
+            const cell = document.createElement("td");
+            cell.colSpan = 8;
+            cell.textContent = "Failed to load audit logs.";
+            row.appendChild(cell);
+            logsBody.appendChild(row);
+
+            showStatus(error.message || "Failed to load audit logs.", "error");
+        }
+    }
+
+    document.getElementById("searchBtn").addEventListener("click", () => {
+        currentPageNumber = 1;
+        loadLogs();
+    });
+
+    document.getElementById("refreshBtn").addEventListener("click", loadLogs);
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+        searchInput.value = "";
+        actionFilter.value = "";
+        entityFilter.value = "";
+        dateFrom.value = "";
+        dateTo.value = "";
+        currentPageNumber = 1;
+        loadLogs();
+    });
+
+    document.getElementById("prevBtn").addEventListener("click", () => {
+        if (currentPageNumber > 1) {
+            currentPageNumber--;
+            loadLogs();
+        }
+    });
+
+    document.getElementById("nextBtn").addEventListener("click", () => {
+        if (currentPageNumber < currentTotalPages) {
+            currentPageNumber++;
+            loadLogs();
+        }
+    });
+
+    document.getElementById("closeDialogTop").addEventListener("click", () => {
+        detailsDialog.close();
+    });
+
+    document.getElementById("closeDialogBottom").addEventListener("click", () => {
+        detailsDialog.close();
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+        try {
+            const response = await fetch("/api/logout", {
+                method: "POST",
+                credentials: "same-origin"
+            });
+
+            if (response.ok) {
+                window.location.href = "/index.html";
+            } else {
+                showStatus("Logout failed. Please try again.", "error");
+            }
+        } catch {
+            showStatus("Unable to contact the server to log out.", "error");
+        }
+    });
+
+    // Load the first page on opening the viewer.
+    loadLogs();
+</script>
+</body>
+</html>

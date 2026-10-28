@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Canteen System | Students</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      color: #172033;
+    }
+
+    .topbar {
+      background: #172033;
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .topbar h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+    }
+
+    .logout {
+      border: 0;
+      padding: 8px 13px;
+      border-radius: 6px;
+      cursor: pointer;
+      background: white;
+      color: #172033;
+      font-weight: bold;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 25px auto;
+      padding: 0 20px;
+    }
+
+    .back {
+      display: inline-block;
+      margin-bottom: 15px;
+      color: #0f766e;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 18px rgba(0,0,0,.07);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .header h2 {
+      margin: 0;
+    }
+
+    .primary-button {
+      padding: 11px 16px;
+      border: 0;
+      border-radius: 7px;
+      background: #2563eb;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .secondary-button, .danger-button, .small-button {
+      border: 0;
+      border-radius: 6px;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 2px;
+    }
+
+    .secondary-button { background: #e2e8f0; color: #172033; }
+    .danger-button { background: #fee2e2; color: #991b1b; }
+    .small-button { background: #dbeafe; color: #1d4ed8; }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .search {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .search input {
+      flex: 1;
+      padding: 11px 13px;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      font-size: 15px;
+    }
+
+    .search button {
+      padding: 11px 18px;
+      border: 0;
+      border-radius: 7px;
+      background: #0f766e;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .search button:hover {
+      opacity: .9;
+    }
+
+    .status {
+      margin-bottom: 15px;
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 900px;
+    }
+
+    th {
+      text-align: left;
+      background: #f8fafc;
+      color: #475569;
+      font-size: 13px;
+      padding: 12px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    tr:hover td {
+      background: #f8fafc;
+    }
+
+    .student-photo {
+      width: 45px;
+      height: 45px;
+      object-fit: cover;
+      border-radius: 50%;
+      background: #e2e8f0;
+      display: block;
+    }
+
+    .no-photo {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      display: grid;
+      place-items: center;
+      color: #64748b;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .active {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 20px;
+      background: #dcfce7;
+      color: #166534;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .inactive {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 20px;
+      background: #fee2e2;
+      color: #991b1b;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .points {
+      font-weight: bold;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 30px;
+      color: #64748b;
+    }
+
+    .error {
+      padding: 15px;
+      border-radius: 8px;
+      background: #fee2e2;
+      color: #991b1b;
+      margin-bottom: 15px;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 40px;
+      color: #64748b;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1000;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      width: 100%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+      background: white;
+      border-radius: 12px;
+      padding: 22px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.25);
+    }
+
+    .modal h2 { margin-top: 0; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+    .form-field { display: flex; flex-direction: column; gap: 6px; }
+    .form-field.full { grid-column: 1 / -1; }
+    .form-field label { font-size: 13px; font-weight: bold; color: #475569; }
+    .form-field input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 7px; font: inherit; }
+    .form-help { color: #64748b; font-size: 12px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-field.full { grid-column: auto; }
+      .container {
+        padding: 0 10px;
+      }
+
+      .card {
+        padding: 12px;
+      }
+
+      .search {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="topbar">
+    <h1>🍽️ Canteen System — Students</h1>
+
+    <div class="topbar-right">
+      <span id="operatorName">Checking login...</span>
+      <button class="logout" id="logoutButton">
+        Logout
+      </button>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <a class="back" href="/">
+      ← Back to Scanner
+    </a>
+
+    <div class="card">
+
+      <div class="header">
+
+        <h2>Student Management</h2>
+
+        <div class="header-actions">
+        <button class="primary-button" type="button" id="addStudentButton">+ Add Student</button>
+        <form class="search" id="searchForm">
+          <input
+            type="search"
+            id="searchInput"
+            placeholder="Search student name or code..."
+            maxlength="100"
+          >
+
+          <button type="submit">
+            Search
+          </button>
+        </form>
+        </div>
+
+      </div>
+
+      <div class="status" id="status">
+        Loading students...
+      </div>
+
+      <div id="error"></div>
+
+      <div class="table-wrapper">
+
+        <table>
+          <thead>
+            <tr>
+              <th>Photo</th>
+              <th>Student Code</th>
+              <th>Full Name</th>
+              <th>Sensei</th>
+              <th>Points</th>
+              <th>Status</th>
+              <th>QR Code</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody id="studentTable">
+          </tbody>
+        </table>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div class="modal-backdrop" id="studentModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="studentModalTitle">
+    <div class="modal">
+      <h2 id="studentModalTitle">Add Student</h2>
+      <div id="studentFormError"></div>
+      <form id="studentForm">
+        <input type="hidden" id="studentId">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="studentCode">Student Code *</label>
+            <input id="studentCode" maxlength="50" required>
+          </div>
+          <div class="form-field">
+            <label for="qrCodeValue">QR Code Value *</label>
+            <input id="qrCodeValue" maxlength="150" required>
+          </div>
+          <div class="form-field full">
+            <label for="fullName">Full Name *</label>
+            <input id="fullName" maxlength="150" required>
+          </div>
+          <div class="form-field full">
+            <label for="photoPath">Photo Path (optional)</label>
+            <input id="photoPath" maxlength="500" placeholder="e.g. /uploads/student.jpg">
+          </div>
+          <div class="form-field full">
+            <label for="senseiId">Sensei ID (optional)</label>
+            <input id="senseiId" type="number" min="1" step="1" placeholder="Leave blank if not assigned">
+            <div class="form-help">Enter an existing SenseiID from your Sensei table. Leave blank for no assignment.</div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="secondary-button" id="cancelStudentButton">Cancel</button>
+          <button type="submit" class="primary-button" id="saveStudentButton">Save Student</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<script>
+
+  const operatorName =
+    document.getElementById("operatorName");
+
+  const logoutButton =
+    document.getElementById("logoutButton");
+
+  const studentTable =
+    document.getElementById("studentTable");
+
+  const status =
+    document.getElementById("status");
+
+  const errorBox =
+    document.getElementById("error");
+
+  const searchForm =
+    document.getElementById("searchForm");
+
+  const searchInput =
+    document.getElementById("searchInput");
+
+  const addStudentButton = document.getElementById("addStudentButton");
+  const studentModalBackdrop = document.getElementById("studentModalBackdrop");
+  const studentModalTitle = document.getElementById("studentModalTitle");
+  const studentForm = document.getElementById("studentForm");
+  const studentFormError = document.getElementById("studentFormError");
+  const saveStudentButton = document.getElementById("saveStudentButton");
+  let currentStudents = [];
+
+  async function checkLogin() {
+
+    try {
+
+      const response = await fetch("/api/me", {
+        credentials: "same-origin",
+        cache: "no-store"
+      });
+
+      if (response.status === 401) {
+        window.location.replace("/login.html");
+        return false;
+      }
+
+      if (!response.ok) {
+        throw new Error("Unable to verify login.");
+      }
+
+      const data = await response.json();
+
+      if (
+        !data.success ||
+        !data.user ||
+        data.user.role !== "ADMIN"
+      ) {
+        document.body.innerHTML = `
+          <div style="
+            padding:40px;
+            text-align:center;
+            font-family:Arial;
+          ">
+            <h2>Administrator access required</h2>
+            <p>Your account does not have permission to access this page.</p>
+            <a href="/login.html">Return to Login</a>
+          </div>
+        `;
+
+        return false;
+      }
+
+      operatorName.textContent =
+        "Admin: " +
+        (data.user.fullName || data.user.username);
+
+      return true;
+
+    } catch (error) {
+
+      document.body.innerHTML = `
+        <div style="
+          padding:40px;
+          text-align:center;
+          font-family:Arial;
+        ">
+          <h2>Unable to connect</h2>
+          <p>Please make sure the Canteen API is running.</p>
+        </div>
+      `;
+
+      return false;
+    }
+  }
+
+
+  function escapeHtml(value) {
+
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+  }
+
+
+  function createPhoto(photoPath, fullName) {
+
+    if (!photoPath) {
+
+      return `
+        <div class="no-photo">
+          No Photo
+        </div>
+      `;
+
+    }
+
+    return `
+      <img
+        class="student-photo"
+        src="${escapeHtml(photoPath)}"
+        alt="${escapeHtml(fullName)}"
+        onerror="
+          this.style.display='none';
+          this.nextElementSibling.style.display='grid';
+        "
+      >
+
+      <div
+        class="no-photo"
+        style="display:none;"
+      >
+        No Photo
+      </div>
+    `;
+
+  }
+
+
+  function displayStudents(students) {
+
+    currentStudents = Array.isArray(students) ? students : [];
+    studentTable.innerHTML = "";
+
+    if (!students || students.length === 0) {
+
+      studentTable.innerHTML = `
+        <tr>
+          <td colspan="8" class="empty">
+            No students found.
+          </td>
+        </tr>
+      `;
+
+      status.textContent = "0 students found.";
+
+      return;
+    }
+
+
+    students.forEach(student => {
+
+      const row =
+        document.createElement("tr");
+
+      const statusHtml =
+        Number(student.IsActive) === 1
+          ? `<span class="active">ACTIVE</span>`
+          : `<span class="inactive">INACTIVE</span>`;
+
+      row.innerHTML = `
+
+        <td>
+          ${createPhoto(
+            student.PhotoPath,
+            student.FullName
+          )}
+        </td>
+
+        <td>
+          <strong>
+            ${escapeHtml(student.StudentCode)}
+          </strong>
+        </td>
+
+        <td>
+          ${escapeHtml(student.FullName)}
+        </td>
+
+        <td>
+          ${escapeHtml(
+            student.SenseiName || "Not assigned"
+          )}
+        </td>
+
+        <td class="points">
+          ${Number(student.CurrentPoints || 0).toFixed(2)}
+        </td>
+
+        <td>
+          ${statusHtml}
+        </td>
+
+        <td>
+          ${escapeHtml(student.QRCodeValue)}
+        </td>
+
+        <td>
+          <button class="small-button" type="button" data-action="edit" data-id="${Number(student.StudentID)}">Edit</button>
+          <button class="${Number(student.IsActive) === 1 ? "danger-button" : "secondary-button"}" type="button" data-action="toggle" data-id="${Number(student.StudentID)}" data-active="${Number(student.IsActive) === 1 ? "true" : "false"}">${Number(student.IsActive) === 1 ? "Deactivate" : "Activate"}</button>
+        </td>
+
+      `;
+
+      studentTable.appendChild(row);
+
+    });
+
+    status.textContent =
+      `${students.length} student(s) displayed.`;
+
+  }
+
+
+  async function loadStudents(search = "") {
+
+    status.textContent = "Loading students...";
+    errorBox.innerHTML = "";
+
+    try {
+
+      const url =
+        "/api/admin/students?search=" +
+        encodeURIComponent(search);
+
+      const response = await fetch(url, {
+        credentials: "same-origin",
+        cache: "no-store"
+      });
+
+      if (response.status === 401) {
+        window.location.replace("/login.html");
+        return;
+      }
+
+      if (response.status === 403) {
+
+        errorBox.innerHTML = `
+          <div class="error">
+            Administrator access is required.
+          </div>
+        `;
+
+        return;
+      }
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+
+        throw new Error(
+          data.message ||
+          "Unable to load students."
+        );
+
+      }
+
+      displayStudents(data.students);
+
+    } catch (error) {
+
+      studentTable.innerHTML = "";
+
+      status.textContent = "";
+
+      errorBox.innerHTML = `
+        <div class="error">
+          ${escapeHtml(error.message)}
+        </div>
+      `;
+
+    }
+
+  }
+
+
+  function openStudentForm(student = null) {
+    studentForm.reset();
+    studentFormError.innerHTML = "";
+    document.getElementById("studentId").value = student ? student.StudentID : "";
+    document.getElementById("studentCode").value = student ? student.StudentCode : "";
+    document.getElementById("qrCodeValue").value = student ? student.QRCodeValue : "";
+    document.getElementById("fullName").value = student ? student.FullName : "";
+    document.getElementById("photoPath").value = student ? (student.PhotoPath || "") : "";
+    document.getElementById("senseiId").value = student && student.SenseiID ? student.SenseiID : "";
+    studentModalTitle.textContent = student ? "Edit Student" : "Add Student";
+    saveStudentButton.textContent = student ? "Save Changes" : "Create Student";
+    studentModalBackdrop.classList.add("open");
+    document.getElementById("studentCode").focus();
+  }
+
+  function closeStudentForm() {
+    studentModalBackdrop.classList.remove("open");
+    studentFormError.innerHTML = "";
+  }
+
+  function showStudentFormError(message) {
+    studentFormError.innerHTML = `<div class="error">${escapeHtml(message)}</div>`;
+  }
+
+  addStudentButton.addEventListener("click", () => openStudentForm());
+  document.getElementById("cancelStudentButton").addEventListener("click", closeStudentForm);
+
+  studentModalBackdrop.addEventListener("click", event => {
+    if (event.target === studentModalBackdrop) closeStudentForm();
+  });
+
+  studentForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    studentFormError.innerHTML = "";
+    saveStudentButton.disabled = true;
+    saveStudentButton.textContent = "Saving...";
+
+    const id = document.getElementById("studentId").value;
+    const payload = {
+      studentCode: document.getElementById("studentCode").value.trim(),
+      qrCodeValue: document.getElementById("qrCodeValue").value.trim(),
+      fullName: document.getElementById("fullName").value.trim(),
+      photoPath: document.getElementById("photoPath").value.trim(),
+      senseiId: document.getElementById("senseiId").value.trim() || null
+    };
+
+    try {
+      const response = await fetch(
+        id ? `/api/admin/students/${encodeURIComponent(id)}` : "/api/admin/students",
+        {
+          method: id ? "PUT" : "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.status === 401) {
+        window.location.replace("/login.html");
+        return;
+      }
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Unable to save student.");
+      }
+
+      closeStudentForm();
+      await loadStudents(searchInput.value.trim());
+      alert(data.message || "Student saved successfully.");
+    } catch (error) {
+      showStudentFormError(error.message);
+    } finally {
+      saveStudentButton.disabled = false;
+      saveStudentButton.textContent = document.getElementById("studentId").value ? "Save Changes" : "Create Student";
+    }
+  });
+
+  studentTable.addEventListener("click", async event => {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+
+    const studentId = Number(button.dataset.id);
+    const student = currentStudents.find(item => Number(item.StudentID) === studentId);
+    if (!student) return;
+
+    if (button.dataset.action === "edit") {
+      openStudentForm(student);
+      return;
+    }
+
+    if (button.dataset.action === "toggle") {
+      const currentlyActive = button.dataset.active === "true";
+      const nextActive = !currentlyActive;
+      const actionText = nextActive ? "activate" : "deactivate";
+
+      if (!window.confirm(`Are you sure you want to ${actionText} ${student.FullName}?`)) return;
+
+      button.disabled = true;
+      try {
+        const response = await fetch(`/api/admin/students/${encodeURIComponent(studentId)}/status`, {
+          method: "PATCH",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isActive: nextActive })
+        });
+
+        const data = await response.json();
+
+        if (response.status === 401) {
+          window.location.replace("/login.html");
+          return;
+        }
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "Unable to update student status.");
+        }
+
+        await loadStudents(searchInput.value.trim());
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        button.disabled = false;
+      }
+    }
+  });
+
+  searchForm.addEventListener(
+    "submit",
+    event => {
+
+      event.preventDefault();
+
+      loadStudents(
+        searchInput.value.trim()
+      );
+
+    }
+  );
+
+
+  logoutButton.addEventListener(
+    "click",
+    async () => {
+
+      logoutButton.disabled = true;
+      logoutButton.textContent = "Logging out...";
+
+      try {
+
+        const response =
+          await fetch("/api/logout", {
+            method: "POST",
+            credentials: "same-origin"
+          });
+
+        if (response.ok) {
+
+          window.location.replace(
+            "/login.html"
+          );
+
+          return;
+
+        }
+
+        throw new Error("Logout failed.");
+
+      } catch (error) {
+
+        alert(error.message);
+
+        logoutButton.disabled = false;
+        logoutButton.textContent = "Logout";
+
+      }
+
+    }
+  );
+
+
+  async function initialize() {
+
+    const loggedIn =
+      await checkLogin();
+
+    if (!loggedIn) {
+      return;
+    }
+
+    await loadStudents();
+
+  }
+
+
+  initialize();
+
+</script>
+
+</body>
+</html>

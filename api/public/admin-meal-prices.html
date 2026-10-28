@@ -1,0 +1,526 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meal Price Management | Canteen System</title>
+  <style>
+    :root {
+      --navy: #14213d;
+      --blue: #2563eb;
+      --bg: #f4f7fb;
+      --text: #172033;
+      --muted: #667085;
+      --border: #e5eaf2;
+      --green: #15803d;
+      --red: #b42318;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      background: var(--navy);
+      color: white;
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    header h1 { margin: 0; font-size: 21px; }
+    header p { margin: 5px 0 0; font-size: 13px; color: #cbd5e1; }
+
+    .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    button, .nav-link {
+      border: 0;
+      border-radius: 8px;
+      padding: 11px 15px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .nav-link { background: white; color: var(--navy); }
+    .logout { background: #334155; color: white; }
+
+    main { width: min(1100px, 94%); margin: 28px auto; }
+    .welcome { color: var(--muted); font-size: 14px; margin-bottom: 22px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 3px 12px rgba(16, 24, 40, .04);
+      min-width: 0;
+    }
+
+    .wide { grid-column: 1 / -1; }
+    h2 { font-size: 19px; margin: 0 0 8px; }
+
+    .description {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0 0 20px;
+    }
+
+    label {
+      display: block;
+      margin: 16px 0 7px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #cfd6e2;
+      border-radius: 8px;
+      background: white;
+      color: var(--text);
+      font: inherit;
+    }
+
+    select:focus, input:focus {
+      outline: 2px solid #bfdbfe;
+      border-color: var(--blue);
+    }
+
+    .primary { width: 100%; background: var(--blue); color: white; margin-top: 20px; }
+    .primary:hover { background: #1d4ed8; }
+    .secondary { background: #eaf0f8; color: var(--navy); }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+
+    .notice {
+      display: none;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 15px 0;
+      overflow-wrap: anywhere;
+    }
+
+    .notice.success { display: block; background: #dcfce7; color: #166534; }
+    .notice.error { display: block; background: #fee2e2; color: #991b1b; }
+    .notice.info { display: block; background: #dbeafe; color: #1e40af; }
+
+    .price-card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      margin-top: 12px;
+    }
+
+    .price-type { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .04em; }
+    .price-value { font-size: 30px; font-weight: 800; margin: 7px 0; }
+    .price-date { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+    .table-wrap { overflow-x: auto; margin-top: 14px; }
+
+    table { width: 100%; border-collapse: collapse; min-width: 650px; font-size: 13px; }
+    th, td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th { background: #f8fafc; color: #475467; }
+
+    .status { font-weight: 700; }
+    .active { color: var(--green); }
+    .ended { color: var(--muted); }
+    .empty { padding: 14px 0; font-size: 13px; color: var(--muted); }
+    .hidden { display: none !important; }
+
+    footer { text-align: center; color: var(--muted); font-size: 12px; padding: 24px; }
+
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+      .wide { grid-column: auto; }
+      header { padding: 16px; }
+      .card { padding: 17px; }
+      main { margin-top: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Canteen System</h1>
+      <p>Administrator · Meal Price Management</p>
+    </div>
+    <div class="header-actions">
+      <a class="nav-link" href="/admin-students.html">Students</a>
+      <a class="nav-link" href="/admin-points.html">Student Points</a>
+      <a class="nav-link" href="/dashboard.html">Dashboard</a>
+      <button class="logout" id="logoutButton" type="button">Log out</button>
+    </div>
+  </header>
+
+  <main>
+    <p class="welcome" id="welcomeText">Checking administrator session...</p>
+
+    <div id="pageContent" class="hidden">
+      <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+      <div class="grid">
+        <section class="card">
+          <h2>Current Meal Prices</h2>
+          <p class="description">
+            Current prices are read directly from the database. Historical prices are preserved.
+          </p>
+
+          <div id="currentPrices">
+            <div class="empty">Loading prices...</div>
+          </div>
+
+          <button type="button" class="secondary" id="refreshButton" style="margin-top:16px">
+            Refresh Prices
+          </button>
+        </section>
+
+        <section class="card">
+          <h2>Set a New Price</h2>
+          <p class="description">
+            A new price takes effect immediately. The current price period will be closed automatically.
+          </p>
+
+          <form id="priceForm">
+            <label for="mealType">Meal type</label>
+            <select id="mealType" required>
+              <option value="REGULAR">REGULAR</option>
+              <option value="EXTRA_RICE">EXTRA_RICE</option>
+            </select>
+
+            <label for="price">New price (PHP)</label>
+            <input id="price" type="number" min="0.01" max="9999999999.99"
+                   step="0.01" placeholder="e.g. 55.00" required>
+
+            <button type="submit" id="saveButton" class="primary">
+              Review New Price
+            </button>
+          </form>
+
+          <p class="description" style="margin:16px 0 0">
+            For safety, scheduled future prices and conflicting active price records
+            must be resolved before this page can create another price.
+          </p>
+        </section>
+
+        <section class="card wide">
+          <h2>Price History</h2>
+          <p class="description">
+            Review earlier prices, their effective dates, and the administrator who recorded them.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Meal Type</th>
+                  <th>Price</th>
+                  <th>Valid From</th>
+                  <th>Valid To</th>
+                  <th>Created By</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="historyBody">
+                <tr><td colspan="7">Loading price history...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer>Canteen System · Administrator tools</footer>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    let prices = [];
+    let submitting = false;
+
+    function formatPHP(value) {
+      return "₱" + Number(value || 0).toLocaleString("en-PH", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function formatDate(value) {
+      if (!value) return "—";
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
+    }
+
+    function showNotice(message, type = "info") {
+      $("notice").textContent = message;
+      $("notice").className = "notice " + type;
+    }
+
+    async function apiFetch(url, options = {}) {
+      const response = await fetch(url, {
+        credentials: "same-origin",
+        ...options,
+        headers: {
+          ...(options.body ? { "Content-Type": "application/json" } : {}),
+          ...(options.headers || {})
+        }
+      });
+
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        throw new Error(
+          response.status === 404
+            ? "API endpoint not found. Check server.js and restart the server."
+            : "Unexpected server response (HTTP " + response.status + ")."
+        );
+      }
+
+      const data = await response.json();
+
+      if (!response.ok || data.success === false) {
+        throw new Error(data.message || "Request failed.");
+      }
+
+      return data;
+    }
+
+    async function checkSession() {
+      try {
+        const data = await apiFetch("/api/me");
+
+        if (!data.user || data.user.role !== "ADMIN") {
+          window.location.replace("/login.html");
+          return false;
+        }
+
+        $("welcomeText").textContent =
+          "Logged in as " + (data.user.fullName || data.user.username) +
+          " · Administrator";
+
+        $("pageContent").classList.remove("hidden");
+        return true;
+      } catch (error) {
+        window.location.replace("/login.html");
+        return false;
+      }
+    }
+
+    function renderCurrentPrices() {
+      const container = $("currentPrices");
+      container.replaceChildren();
+
+      const now = Date.now();
+
+      ["REGULAR", "EXTRA_RICE"].forEach((type) => {
+        const current = prices
+          .filter((p) =>
+            p.MealType === type &&
+            new Date(p.ValidFrom).getTime() <= now &&
+            (!p.ValidTo || new Date(p.ValidTo).getTime() > now)
+          )
+          .sort((a, b) =>
+            new Date(b.ValidFrom).getTime() - new Date(a.ValidFrom).getTime()
+          );
+
+        const card = document.createElement("div");
+        card.className = "price-card";
+
+        const typeLabel = document.createElement("div");
+        typeLabel.className = "price-type";
+        typeLabel.textContent = type;
+
+        const value = document.createElement("div");
+        value.className = "price-value";
+        value.textContent = current.length === 1
+          ? formatPHP(current[0].Price)
+          : current.length === 0
+            ? "No active price"
+            : "Conflict detected";
+
+        const date = document.createElement("div");
+        date.className = "price-date";
+        date.textContent = current.length === 1
+          ? "Effective from " + formatDate(current[0].ValidFrom)
+          : current.length === 0
+            ? "No price is currently effective."
+            : "Multiple prices are currently effective. Resolve the conflict first.";
+
+        card.append(typeLabel, value, date);
+        container.appendChild(card);
+      });
+    }
+
+    function renderHistory() {
+      const body = $("historyBody");
+      body.replaceChildren();
+
+      if (!prices.length) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 7;
+        cell.textContent = "No meal price records found.";
+        row.appendChild(cell);
+        body.appendChild(row);
+        return;
+      }
+
+      const now = Date.now();
+
+      prices.forEach((price) => {
+        const row = document.createElement("tr");
+
+        const isActive =
+          new Date(price.ValidFrom).getTime() <= now &&
+          (!price.ValidTo || new Date(price.ValidTo).getTime() > now);
+
+        const values = [
+          price.MealPriceID,
+          price.MealType,
+          formatPHP(price.Price),
+          formatDate(price.ValidFrom),
+          formatDate(price.ValidTo),
+          price.CreatedBy == null ? "—" : price.CreatedBy
+        ];
+
+        values.forEach((value) => {
+          const cell = document.createElement("td");
+          cell.textContent = value;
+          row.appendChild(cell);
+        });
+
+        const statusCell = document.createElement("td");
+        statusCell.className = "status " + (isActive ? "active" : "ended");
+        statusCell.textContent = isActive ? "ACTIVE" : "HISTORICAL";
+        row.appendChild(statusCell);
+
+        body.appendChild(row);
+      });
+    }
+
+    async function loadPrices() {
+      $("refreshButton").disabled = true;
+
+      try {
+        const data = await apiFetch("/api/admin/meal-prices");
+        prices = Array.isArray(data.prices) ? data.prices : [];
+        renderCurrentPrices();
+        renderHistory();
+      } catch (error) {
+        showNotice("Unable to load meal prices: " + error.message, "error");
+        $("currentPrices").textContent = error.message;
+      } finally {
+        $("refreshButton").disabled = false;
+      }
+    }
+
+    $("refreshButton").addEventListener("click", loadPrices);
+
+    $("priceForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (submitting) return;
+
+      const mealType = $("mealType").value;
+      const price = Number($("price").value);
+
+      if (
+        !Number.isFinite(price) ||
+        price <= 0 ||
+        price > 9999999999.99 ||
+        Math.round(price * 100) !== price * 100
+      ) {
+        showNotice("Enter a valid price with at most two decimal places.", "error");
+        return;
+      }
+
+      const current = prices.filter((p) =>
+        p.MealType === mealType &&
+        new Date(p.ValidFrom).getTime() <= Date.now() &&
+        (!p.ValidTo || new Date(p.ValidTo).getTime() > Date.now())
+      );
+
+      if (current.length !== 1) {
+        showNotice(
+          "This meal type does not have exactly one active price. Review the database records before changing it.",
+          "error"
+        );
+        return;
+      }
+
+      if (Number(current[0].Price) === price) {
+        showNotice("This is already the current price. No change is needed.", "info");
+        return;
+      }
+
+      const confirmed = window.confirm(
+        "CONFIRM MEAL PRICE CHANGE\n\n" +
+        "Meal type: " + mealType + "\n" +
+        "Current price: " + formatPHP(current[0].Price) + "\n" +
+        "New price: " + formatPHP(price) + "\n\n" +
+        "The new price will take effect immediately. Continue?"
+      );
+
+      if (!confirmed) return;
+
+      submitting = true;
+      $("saveButton").disabled = true;
+      $("saveButton").textContent = "Saving...";
+
+      try {
+        const result = await apiFetch("/api/admin/meal-prices", {
+          method: "POST",
+          body: JSON.stringify({ mealType, price })
+        });
+
+        showNotice(result.message || "Meal price updated successfully.", "success");
+        $("price").value = "";
+        await loadPrices();
+      } catch (error) {
+        showNotice(error.message, "error");
+      } finally {
+        submitting = false;
+        $("saveButton").disabled = false;
+        $("saveButton").textContent = "Review New Price";
+      }
+    });
+
+    $("logoutButton").addEventListener("click", async () => {
+      if (!window.confirm("Are you sure you want to log out?")) return;
+
+      try {
+        await apiFetch("/api/logout", { method: "POST" });
+      } catch (error) {
+        // Redirect even if the logout response cannot be parsed.
+      }
+
+      window.location.replace("/login.html");
+    });
+
+    (async function init() {
+      if (await checkSession()) await loadPrices();
+    })();
+  </script>
+</body>
+</html>

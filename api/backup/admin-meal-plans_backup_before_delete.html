@@ -1,0 +1,653 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meal Plan Management</title>
+    <style>
+        :root {
+            font-family: "Segoe UI", Arial, sans-serif;
+            color: #172033;
+            background: #f4f7fb;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        h1 { margin: 0 0 6px; font-size: 28px; }
+        .subtitle { margin: 0; color: #68758b; }
+
+        .panel {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(25, 40, 70, .04);
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 16px;
+            align-items: end;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 7px;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 11px 12px;
+            border-radius: 8px;
+            font: inherit;
+        }
+
+        input, select {
+            border: 1px solid #cbd5e1;
+            background: white;
+            color: #172033;
+        }
+
+        button {
+            border: 0;
+            background: #1d4ed8;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button:hover { background: #1e40af; }
+
+        button.secondary { background: #475569; }
+        button.secondary:hover { background: #334155; }
+
+        .summary {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+
+        .summary h2 { font-size: 18px; margin: 0; }
+        #status { color: #64748b; font-size: 14px; }
+
+        .table-wrap { overflow-x: auto; }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 850px;
+        }
+
+        th, td {
+            padding: 13px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e8edf4;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #526078;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        .meal {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .regular { background: #dcfce7; color: #166534; }
+        .extra { background: #dbeafe; color: #1d4ed8; }
+        .none { background: #f1f5f9; color: #64748b; }
+
+        .empty {
+            padding: 32px;
+            text-align: center;
+            color: #64748b;
+        }
+
+        .error { color: #b91c1c !important; }
+        .muted { color: #64748b; font-size: 13px; }
+
+        @media (max-width: 600px) {
+            body { padding: 14px; }
+            h1 { font-size: 23px; }
+            .panel { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <div>
+            <h1>Meal Plan Management</h1>
+            <p class="subtitle">View student breakfast, lunch, and dinner entitlements.</p>
+        </div>
+        <button class="secondary" id="logoutButton" style="width:auto">
+            Log out
+        </button>
+    </header>
+        
+<section class="panel">
+    <h2 style="margin-top:0">Add Meal Plan</h2>
+    <p class="muted">Create a meal entitlement for one student, date, and meal period.</p>
+
+    <form id="addMealPlanForm">
+        <div class="filters">
+            <div>
+                <label for="newStudentId">Student</label>
+                <select id="newStudentId" required>
+                    <option value="">Select a student</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="newMealDate">Meal date</label>
+                <input type="date" id="newMealDate" required>
+            </div>
+
+            <div>
+                <label for="newMealPeriod">Meal period</label>
+                <select id="newMealPeriod" required>
+                    <option value="BREAKFAST">Breakfast</option>
+                    <option value="LUNCH">Lunch</option>
+                    <option value="DINNER">Dinner</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="newMealType">Meal type</label>
+                <select id="newMealType" required>
+                    <option value="REGULAR">Regular</option>
+                    <option value="EXTRA_RICE">Extra Rice</option>
+                    <option value="NONE">None</option>
+                </select>
+            </div>
+
+            <div>
+                <button type="submit" id="addMealPlanButton">Add Meal Plan</button>
+            </div>
+        </div>
+    </form>
+
+    <p id="addMealPlanStatus" class="muted" role="status"></p>
+</section>
+
+    <section class="panel">
+        <div class="filters">
+            <div>
+                <label for="studentFilter">Student</label>
+                <select id="studentFilter">
+                    <option value="">All students</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="dateFilter">Meal date</label>
+                <input type="date" id="dateFilter">
+            </div>
+
+            <div>
+                <label for="periodFilter">Meal period</label>
+                <select id="periodFilter">
+                    <option value="">All periods</option>
+                    <option value="BREAKFAST">Breakfast</option>
+                    <option value="LUNCH">Lunch</option>
+                    <option value="DINNER">Dinner</option>
+                </select>
+            </div>
+
+            <div>
+                <button id="searchButton">Apply filters</button>
+            </div>
+
+            <div>
+                <button id="clearButton" class="secondary">Clear filters</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="summary">
+            <h2>Meal Plan Records</h2>
+            <span id="status">Loading records...</span>
+        </div>
+
+        <p class="muted">
+            This page currently displays records only. It does not edit or delete meal plans.
+        </p>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Student Code</th>
+                    <th>Student Name</th>
+                    <th>Breakfast</th>
+                    <th>Lunch</th>
+                    <th>Dinner</th>
+                    <th>Submitted Via</th>
+                </tr>
+                </thead>
+                <tbody id="mealPlanBody">
+                <tr><td colspan="7" class="empty">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<script>
+    const studentFilter = document.getElementById("studentFilter");
+    const dateFilter = document.getElementById("dateFilter");
+    const periodFilter = document.getElementById("periodFilter");
+    const mealPlanBody = document.getElementById("mealPlanBody");
+    const statusText = document.getElementById("status");
+
+    let allMealPlans = [];
+
+    async function apiFetch(url, options = {}) {
+        const response = await fetch(url, {
+            credentials: "same-origin",
+            ...options,
+            headers: {
+                ...(options.headers || {})
+            }
+        });
+
+        if (response.status === 401 || response.status === 403) {
+            throw new Error("Your admin session may have expired. Please log in again.");
+        }
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(data.message || "Request failed.");
+        }
+
+        return data;
+    }
+
+   
+async function loadStudents() {
+    const data = await apiFetch("/api/admin/students");
+
+    if (!data.success || !Array.isArray(data.students)) {
+        throw new Error("Could not load the student list.");
+    }
+
+    const newStudentSelect = document.getElementById("newStudentId");
+
+    data.students.forEach(student => {
+        const label = `${student.StudentCode} - ${student.FullName}`;
+
+        const filterOption = document.createElement("option");
+        filterOption.value = student.StudentID;
+        filterOption.textContent = label;
+        studentFilter.appendChild(filterOption);
+
+        const addOption = document.createElement("option");
+        addOption.value = student.StudentID;
+        addOption.textContent = label;
+        newStudentSelect.appendChild(addOption);
+    });
+}
+
+
+    async function loadMealPlans() {
+        statusText.classList.remove("error");
+        statusText.textContent = "Loading records...";
+        mealPlanBody.innerHTML =
+            '<tr><td colspan="7" class="empty">Loading...</td></tr>';
+
+        try {
+            const params = new URLSearchParams();
+
+            if (dateFilter.value) {
+                params.set("date", dateFilter.value);
+            }
+
+            if (studentFilter.value) {
+                params.set("studentId", studentFilter.value);
+            }
+
+            const url = "/api/admin/meal-plans" +
+                (params.toString() ? "?" + params.toString() : "");
+
+            const data = await apiFetch(url);
+
+            if (!data.success || !Array.isArray(data.mealPlans)) {
+                throw new Error("Unexpected meal-plan response.");
+            }
+
+            allMealPlans = data.mealPlans;
+            renderMealPlans();
+        } catch (error) {
+            statusText.textContent = error.message;
+            statusText.classList.add("error");
+            mealPlanBody.innerHTML =
+                '<tr><td colspan="7" class="empty">Could not load meal plans.</td></tr>';
+        }
+    }
+
+    function escapeHTML(value) {
+        return String(value ?? "").replace(/[&<>"']/g, character => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        })[character]);
+    }
+
+    function mealBadge(type) {
+        const safeType = String(type || "NONE");
+        let css = "none";
+
+        if (safeType === "REGULAR") css = "regular";
+        if (safeType === "EXTRA_RICE") css = "extra";
+
+        const label = safeType === "EXTRA_RICE"
+            ? "EXTRA RICE"
+            : safeType;
+
+        return `<span class="meal ${css}">${escapeHTML(label)}</span>`;
+    }
+
+    function formatDate(value) {
+        if (!value) return "—";
+
+        const dateString = String(value).slice(0, 10);
+        const parts = dateString.split("-");
+
+        if (parts.length !== 3) return escapeHTML(dateString);
+
+        return `${parts[1]}/${parts[2]}/${parts[0]}`;
+    }
+
+    
+function renderMealCell(type, mealPlanId) {
+    if (!mealPlanId) {
+        return "—";
+    }
+
+    return `
+        ${mealBadge(type)}
+        <button
+            type="button"
+            class="edit-meal-button"
+            data-id="${Number(mealPlanId)}"
+            data-type="${escapeHTML(type)}"
+            style="width:auto;padding:5px 8px;margin-left:5px;font-size:12px;"
+        >Edit</button>
+    `;
+}
+
+async function editMeal(mealPlanId, currentType) {
+    const choice = prompt(
+        "Enter the new meal type:\n\n" +
+        "REGULAR\nEXTRA_RICE\nNONE",
+        currentType
+    );
+
+    if (choice === null) return;
+
+    const mealType = choice.trim().toUpperCase();
+
+    if (!["REGULAR", "EXTRA_RICE", "NONE"].includes(mealType)) {
+        alert("Invalid meal type. Enter REGULAR, EXTRA_RICE, or NONE.");
+        return;
+    }
+
+    if (mealType === currentType) {
+        alert("The meal type has not changed.");
+        return;
+    }
+
+    if (!confirm(`Save this change?\n${currentType} → ${mealType}`)) {
+        return;
+    }
+
+    try {
+        const data = await apiFetch(
+            `/api/admin/meal-plans/${mealPlanId}`,
+            {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ mealType })
+            }
+        );
+
+        if (!data.success) {
+            throw new Error(data.message || "Update failed.");
+        }
+
+        alert(data.message || "Meal plan updated successfully.");
+        await loadMealPlans();
+    } catch (error) {
+        alert("Could not update meal plan: " + error.message);
+    }
+}
+
+mealPlanBody.addEventListener("click", event => {
+    const button = event.target.closest(".edit-meal-button");
+
+    if (!button) return;
+
+    const mealPlanId = Number(button.dataset.id);
+    const currentType = button.dataset.type;
+
+    if (!Number.isInteger(mealPlanId) || mealPlanId <= 0) {
+        alert("Invalid meal plan ID.");
+        return;
+    }
+
+    editMeal(mealPlanId, currentType);
+});
+
+
+    function renderMealPlans() {
+        const grouped = new Map();
+
+        allMealPlans.forEach(record => {
+            if (periodFilter.value &&
+                record.MealPeriod !== periodFilter.value) {
+                return;
+            }
+
+            const key = `${record.StudentID}|${String(record.MealDate).slice(0, 10)}`;
+
+            if (!grouped.has(key)) {
+                grouped.set(key, {
+                    date: record.MealDate,
+                    studentId: record.StudentID,
+                    studentCode: record.StudentCode,
+                    fullName: record.FullName,
+                    submittedVia: record.SubmittedVia,
+                    breakfast: "NONE",
+                    breakfastId: null,
+                    lunch: "NONE",
+                    lunchId: null,
+                    dinner: "NONE",
+                    dinnerId: null,
+                    periods: new Set()
+                });
+            }
+
+            const item = grouped.get(key);
+            const period = record.MealPeriod;
+
+            item.submittedVia = record.SubmittedVia || item.submittedVia;
+            item.periods.add(period);
+
+            if (period === "BREAKFAST") {
+    item.breakfast = record.MealType;
+    item.breakfastId = record.MealPlanID;
+}
+
+if (period === "LUNCH") {
+    item.lunch = record.MealType;
+    item.lunchId = record.MealPlanID;
+}
+
+if (period === "DINNER") {
+    item.dinner = record.MealType;
+    item.dinnerId = record.MealPlanID;
+}
+        });
+
+        const records = Array.from(grouped.values());
+
+        if (records.length === 0) {
+            mealPlanBody.innerHTML =
+                '<tr><td colspan="7" class="empty">No meal plans found for these filters.</td></tr>';
+            statusText.textContent = "0 records";
+            return;
+        }
+
+        mealPlanBody.innerHTML = records.map(item => `
+            <tr>
+                <td>${formatDate(item.date)}</td>
+                <td>${escapeHTML(item.studentCode)}</td>
+                <td>${escapeHTML(item.fullName)}</td>
+               <td>${item.periods.has("BREAKFAST") ? renderMealCell(item.breakfast, item.breakfastId) : "—"}</td>
+                <td>${item.periods.has("LUNCH") ? renderMealCell(item.lunch, item.lunchId) : "—"}</td>
+                <td>${item.periods.has("DINNER") ? renderMealCell(item.dinner, item.dinnerId) : "—"}</td>
+                <td>${escapeHTML(item.submittedVia || "—")}</td>
+            </tr>
+        `).join("");
+
+        statusText.textContent = `${records.length} student-day record(s)`;
+    }
+    
+document.getElementById("addMealPlanForm").addEventListener("submit", async event => {
+    event.preventDefault();
+
+    const button = document.getElementById("addMealPlanButton");
+    const status = document.getElementById("addMealPlanStatus");
+
+    const payload = {
+        studentId: document.getElementById("newStudentId").value,
+        mealDate: document.getElementById("newMealDate").value,
+        mealPeriod: document.getElementById("newMealPeriod").value,
+        mealType: document.getElementById("newMealType").value
+    };
+
+    if (!payload.studentId || !payload.mealDate) {
+        status.textContent = "Select a student and meal date.";
+        status.classList.add("error");
+        return;
+    }
+
+    if (!confirm(
+        `Create this meal plan?\n\n` +
+        `Date: ${payload.mealDate}\n` +
+        `Period: ${payload.mealPeriod}\n` +
+        `Type: ${payload.mealType}`
+    )) {
+        return;
+    }
+
+    button.disabled = true;
+    status.classList.remove("error");
+    status.textContent = "Saving meal plan...";
+
+    try {
+        const result = await apiFetch("/api/admin/meal-plans", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        status.textContent = result.message || "Meal plan created.";
+        document.getElementById("studentFilter").value = payload.studentId;
+        document.getElementById("dateFilter").value = payload.mealDate;
+        document.getElementById("periodFilter").value = "";
+        await loadMealPlans();
+    } catch (error) {
+        status.textContent = error.message;
+        status.classList.add("error");
+    } finally {
+        button.disabled = false;
+    }
+});
+
+    document.getElementById("searchButton").addEventListener("click", loadMealPlans);
+
+    document.getElementById("clearButton").addEventListener("click", () => {
+        studentFilter.value = "";
+        dateFilter.value = "";
+        periodFilter.value = "";
+        loadMealPlans();
+    });
+
+    periodFilter.addEventListener("change", renderMealPlans);
+
+    document.getElementById("logoutButton").addEventListener("click", async () => {
+        try {
+            await apiFetch("/api/logout", { method: "POST" });
+            window.location.href = "/index.html";
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+    async function initializePage() {
+        try {
+            const me = await apiFetch("/api/me");
+
+            if (!me.user || me.user.role !== "ADMIN") {
+                window.location.href = "/index.html";
+                return;
+            }
+
+            await loadStudents();
+            await loadMealPlans();
+        } catch (error) {
+            statusText.textContent = error.message;
+            statusText.classList.add("error");
+            mealPlanBody.innerHTML =
+                '<tr><td colspan="7" class="empty">Unable to initialize the page.</td></tr>';
+        }
+    }
+
+    initializePage();
+</script>
+</body>
+</html>

@@ -1,0 +1,192 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Canteen System | Login</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      color: #172033;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 390px;
+      padding: 30px;
+      border-radius: 16px;
+      background: white;
+      box-shadow: 0 12px 35px rgba(15, 23, 42, .10);
+    }
+
+    .logo {
+      width: 54px;
+      height: 54px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 18px;
+      border-radius: 14px;
+      background: #0f766e;
+      color: white;
+      font-size: 25px;
+      font-weight: bold;
+    }
+
+    h1 { margin: 0 0 8px; font-size: 25px; }
+    .subtitle { margin: 0 0 24px; color: #64748b; font-size: 14px; }
+
+    label {
+      display: block;
+      margin: 16px 0 7px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 9px;
+      font-size: 16px;
+    }
+
+    input:focus {
+      outline: 2px solid #99f6e4;
+      border-color: #0f766e;
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      margin-top: 22px;
+      border: 0;
+      border-radius: 9px;
+      background: #0f766e;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled { opacity: .6; cursor: wait; }
+
+    #message {
+      margin-top: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .error { color: #b91c1c; }
+    .success { color: #047857; }
+
+    .footer {
+      margin-top: 24px;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="logo">C</div>
+    <h1>Canteen System</h1>
+    <p class="subtitle">Sign in to access the canteen scanner and dashboard.</p>
+
+    <form id="loginForm">
+      <label for="username">Username</label>
+      <input
+        id="username"
+        name="username"
+        autocomplete="username"
+        maxlength="100"
+        required
+      >
+
+      <label for="password">Password</label>
+      <input
+        id="password"
+        name="password"
+        type="password"
+        autocomplete="current-password"
+        maxlength="200"
+        required
+      >
+
+      <button id="loginButton" type="submit">Sign In</button>
+      <div id="message" role="status" aria-live="polite"></div>
+    </form>
+
+    <div class="footer">Authorized personnel only</div>
+  </main>
+
+  <script>
+    const form = document.getElementById("loginForm");
+    const button = document.getElementById("loginButton");
+    const message = document.getElementById("message");
+
+    function showMessage(text, type) {
+      message.textContent = text;
+      message.className = type || "";
+    }
+
+    async function checkSession() {
+      try {
+        const response = await fetch("/api/me", {
+          credentials: "same-origin"
+        });
+
+        if (response.ok) {
+          window.location.replace("/");
+        }
+      } catch (error) {
+        showMessage("Unable to connect to the server.", "error");
+      }
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      button.disabled = true;
+      showMessage("Signing in...", "");
+
+      try {
+        const response = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            username: document.getElementById("username").value.trim(),
+            password: document.getElementById("password").value
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          showMessage(data.message || "Unable to sign in.", "error");
+          return;
+        }
+
+        document.getElementById("password").value = "";
+        showMessage("Login successful. Opening scanner...", "success");
+        window.location.replace("/");
+      } catch (error) {
+        showMessage("Unable to connect to the server.", "error");
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    checkSession();
+  </script>
+</body>
+</html>

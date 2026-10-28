@@ -1,0 +1,395 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Canteen Meal Scanner</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      color: #172033;
+    }
+    header {
+      background: #142b4a;
+      color: white;
+      padding: 20px;
+    }
+    header h1 { margin: 0 0 6px; font-size: 24px; }
+    header p { margin: 0; color: #cbd5e1; }
+    main { max-width: 900px; margin: 24px auto; padding: 0 16px; }
+    .panel {
+      background: white;
+      border-radius: 14px;
+      padding: 22px;
+      margin-bottom: 18px;
+      box-shadow: 0 3px 14px #0f172a0d;
+    }
+    label { display: block; font-weight: bold; margin: 14px 0 7px; }
+    input, select, button {
+      width: 100%;
+      padding: 13px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      font-size: 16px;
+    }
+    button { cursor: pointer; border: 0; font-weight: bold; }
+    .primary { background: #1763d1; color: white; margin-top: 14px; }
+    .secondary { background: #e2e8f0; color: #172033; margin-top: 10px; }
+    .danger { background: #b91c1c; color: white; margin-top: 10px; }
+    .student { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+    .photo {
+      width: 110px; height: 110px; border-radius: 12px;
+      object-fit: cover; background: #e2e8f0;
+    }
+    .name { font-size: 23px; font-weight: bold; }
+    .muted { color: #64748b; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .stat { padding: 15px; background: #f1f5f9; border-radius: 10px; }
+    .stat strong { display: block; margin-top: 8px; font-size: 20px; }
+    .status { padding: 12px; border-radius: 8px; margin-top: 14px; }
+    .ok { background: #dcfce7; color: #166534; }
+    .warn { background: #fef3c7; color: #92400e; }
+    .bad { background: #fee2e2; color: #991b1b; }
+    [hidden] { display: none !important; }
+    @media (max-width: 600px) {
+      .stats { grid-template-columns: 1fr; }
+      main { margin-top: 14px; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Canteen Meal Scanner</h1>
+  <p>Student meal verification and points deduction</p>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>Scan Student ID</h2>
+    <p class="muted">Scan the QR code or type the student's QR value.</p>
+
+    <label for="qr">Student QR Code</label>
+    <input id="qr" autocomplete="off" placeholder="Scan or enter student code">
+
+    <label for="date">Meal Date</label>
+    <input id="date" type="date">
+
+    <label for="period">Meal Period</label>
+    <select id="period">
+      <option value="BREAKFAST">Breakfast</option>
+      <option value="LUNCH">Lunch</option>
+      <option value="DINNER">Dinner</option>
+    </select>
+
+    <button class="primary" id="lookup">Find Student & Meal</button>
+    <div id="message" aria-live="polite"></div>
+  </section>
+
+  <section class="panel" id="details" hidden>
+    <div class="student">
+      <img class="photo" id="photo" alt="Student photo" hidden>
+      <div>
+        <div class="name" id="name"></div>
+        <div id="studentCode"></div>
+        <div id="sensei" class="muted"></div>
+      </div>
+    </div>
+
+    <hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0">
+
+    <div class="stats">
+      <div class="stat">Registered Meal<strong id="meal">—</strong></div>
+      <div class="stat">Meal Price<strong id="price">—</strong></div>
+      <div class="stat">Current Points<strong id="balance">—</strong></div>
+    </div>
+
+    <div id="claimStatus" class="status warn"></div>
+
+    <div id="confirmation" hidden>
+      <p id="deductionText"></p>
+      <button class="primary" id="claim">Confirm Meal Claim</button>
+      <button class="secondary" id="cancel">Cancel</button>
+    </div>
+  </section>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  let currentPreview = null;
+  let busy = false;
+
+  function localDate() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  $("date").value = localDate();
+
+  function showMessage(text, type = "warn") {
+    $("message").className = "status " + type;
+    $("message").textContent = text;
+  }
+
+  function peso(value) {
+    return "₱" + Number(value).toFixed(2);
+  }
+
+  function resetDetails() {
+    currentPreview = null;
+    $("details").hidden = true;
+    $("confirmation").hidden = true;
+  }
+
+  async function lookup() {
+    if (busy) return;
+
+    const qr = $("qr").value.trim();
+    const date = $("date").value;
+    const period = $("period").value;
+
+    resetDetails();
+
+    if (!qr || !date) {
+      showMessage("Scan a student QR code and select a date.", "bad");
+      $("qr").focus();
+      return;
+    }
+
+    $("lookup").disabled = true;
+    showMessage("Checking student and meal...", "warn");
+
+    try {
+      const url = `/api/meal-preview/${encodeURIComponent(qr)}?date=${encodeURIComponent(date)}&period=${encodeURIComponent(period)}`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Unable to find student.");
+      }
+
+      currentPreview = { qr, date, period, data };
+      const student = data.student;
+      const meal = data.meal;
+
+      $("name").textContent = student.fullName;
+      $("studentCode").textContent = "Student code: " + student.studentCode;
+      $("sensei").textContent = "Sensei: " + (student.senseiName || "Not assigned");
+      $("balance").textContent = peso(student.currentPoints);
+
+      const photo = $("photo");
+      photo.hidden = true;
+      photo.removeAttribute("src");
+
+      if (student.photoPath) {
+        // PhotoPath must be a browser-accessible URL or served file path.
+        photo.onload = () => { photo.hidden = false; };
+        photo.onerror = () => { photo.hidden = true; };
+        photo.src = student.photoPath;
+      }
+
+      $("details").hidden = false;
+
+      if (!meal) {
+        $("meal").textContent = "Not registered";
+        $("price").textContent = "—";
+        $("claimStatus").className = "status bad";
+        $("claimStatus").textContent = "No meal plan found for this student, date, and meal period.";
+        showMessage("Student found. No meal is registered.", "bad");
+      } else if (meal.mealType === "NONE") {
+        $("meal").textContent = "None";
+        $("price").textContent = "—";
+        $("claimStatus").className = "status warn";
+        $("claimStatus").textContent = "The student selected no meal for this period.";
+        showMessage("Student found. No meal to serve.", "warn");
+      } else if (data.alreadyClaimed) {
+        $("meal").textContent = meal.mealType.replace("_", " ");
+        $("price").textContent = meal.price == null ? "Price unavailable" : peso(meal.price);
+        $("claimStatus").className = "status bad";
+        $("claimStatus").textContent = "This meal has already been claimed. Do not serve it again.";
+        showMessage("Duplicate claim blocked.", "bad");
+      } else if (meal.price == null) {
+        $("meal").textContent = meal.mealType.replace("_", " ");
+        $("price").textContent = "Unavailable";
+        $("claimStatus").className = "status bad";
+        $("claimStatus").textContent = "No currently valid price is configured for this meal.";
+        showMessage("Ask an administrator to check meal pricing.", "bad");
+      } else if (Number(student.currentPoints) < Number(meal.price)) {
+        $("meal").textContent = meal.mealType.replace("_", " ");
+        $("price").textContent = peso(meal.price);
+        $("claimStatus").className = "status bad";
+        $("claimStatus").textContent = "Insufficient points. The meal cannot be claimed.";
+        showMessage("Insufficient points.", "bad");
+      } else {
+        $("meal").textContent = meal.mealType.replace("_", " ");
+        $("price").textContent = peso(meal.price);
+        $("claimStatus").className = "status ok";
+        $("claimStatus").textContent = "Eligible for a meal claim. Verify the details before confirming.";
+        $("deductionText").textContent =
+          `Deduct ${peso(meal.price)} points from ${student.fullName}? Estimated balance after claim: ${peso(Number(student.currentPoints) - Number(meal.price))}.`;
+        $("confirmation").hidden = false;
+        showMessage("Student and meal verified.", "ok");
+      }
+    } catch (error) {
+      showMessage(error.message || "Could not contact the API.", "bad");
+    } finally {
+      $("lookup").disabled = false;
+    }
+  }
+
+  async function claimMeal() {
+    if (busy || !currentPreview) return;
+
+    const { qr, date, period } = currentPreview;
+    busy = true;
+    $("claim").disabled = true;
+    $("lookup").disabled = true;
+    showMessage("Processing claim. Please wait...", "warn");
+
+    try {
+      const response = await fetch("/api/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          qrCode: qr,
+          mealDate: date,
+          mealPeriod: period
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.Message || result.message || result.Result || "Claim was rejected.");
+      }
+
+      showMessage("Claim successful. Refreshing the student balance...", "ok");
+      $("confirmation").hidden = true;
+      await lookup();
+    } catch (error) {
+      showMessage(error.message || "Claim failed. Check the server and database.", "bad");
+    } finally {
+      busy = false;
+      $("claim").disabled = false;
+      $("lookup").disabled = false;
+    }
+  }
+
+  $("lookup").addEventListener("click", lookup);
+  $("claim").addEventListener("click", claimMeal);
+  $("cancel").addEventListener("click", () => {
+    $("confirmation").hidden = true;
+    showMessage("Claim cancelled. No points were deducted.", "warn");
+  });
+
+  $("qr").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      lookup();
+    }
+  });
+
+  $("date").addEventListener("change", resetDetails);
+  $("period").addEventListener("change", resetDetails);
+
+  $("qr").focus();
+</script>
+
+
+<script>
+(async function protectCanteenPage() {
+  try {
+    const response = await fetch("/api/me", {
+      credentials: "same-origin",
+      cache: "no-store"
+    });
+
+    if (response.status === 401) {
+      window.location.replace("/login.html");
+      return;
+    }
+
+    if (!response.ok) {
+      document.body.innerHTML =
+        "<h2>Unable to verify login. Please refresh the page.</h2>";
+      return;
+    }
+
+    const data = await response.json();
+
+    const bar = document.createElement("div");
+    bar.style.cssText = [
+      "position:fixed",
+      "top:0",
+      "right:0",
+      "z-index:99999",
+      "display:flex",
+      "align-items:center",
+      "gap:12px",
+      "padding:10px 16px",
+      "background:#172033",
+      "color:white",
+      "font:14px Arial,sans-serif",
+      "border-radius:0 0 0 12px",
+      "box-shadow:0 2px 8px #0002"
+    ].join(";");
+
+    const operator = document.createElement("span");
+    operator.textContent =
+      "Signed in: " + (data.user.fullName || data.user.username);
+
+    const dashboard = document.createElement("a");
+    dashboard.href = "/dashboard.html";
+    dashboard.textContent = "Dashboard";
+    dashboard.style.color = "white";
+
+    const logout = document.createElement("button");
+    logout.type = "button";
+    logout.textContent = "Logout";
+    logout.style.cssText =
+      "padding:8px 12px;cursor:pointer;border:0;border-radius:6px";
+
+    logout.addEventListener("click", async () => {
+      logout.disabled = true;
+      logout.textContent = "Logging out...";
+
+      try {
+        const result = await fetch("/api/logout", {
+          method: "POST",
+          credentials: "same-origin"
+        });
+
+        if (result.ok) {
+          window.location.replace("/login.html");
+          return;
+        }
+
+        logout.disabled = false;
+        logout.textContent = "Logout";
+        alert("Unable to log out. Please try again.");
+      } catch {
+        logout.disabled = false;
+        logout.textContent = "Logout";
+        alert("Cannot connect to the server.");
+      }
+    });
+
+    bar.append(operator, dashboard, logout);
+    document.body.appendChild(bar);
+  } catch {
+    document.body.innerHTML =
+      "<h2>Cannot connect to the server. Please refresh the page.</h2>";
+  }
+})();
+</script>
+</body>
+</html>
+
+</body>
+</html>

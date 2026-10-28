@@ -1,0 +1,432 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canteen Dashboard</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: Arial, sans-serif;
+      background: #f3f6fb;
+      color: #172033;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    h1 { margin: 0 0 8px; }
+    .subtitle { color: #64748b; margin: 0; }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: end;
+      background: white;
+      padding: 18px;
+      border-radius: 14px;
+      margin-bottom: 20px;
+      box-shadow: 0 3px 12px #1720330d;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 7px;
+    }
+
+    input, select, button {
+      min-height: 42px;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    button {
+      border: none;
+      background: #1d4ed8;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover { background: #1e40af; }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: white;
+      padding: 22px;
+      border-radius: 14px;
+      box-shadow: 0 3px 12px #1720330d;
+      border-top: 4px solid #2563eb;
+    }
+
+    .card h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #64748b;
+      margin: 0 0 14px;
+    }
+
+    .number {
+      font-size: 36px;
+      font-weight: 800;
+    }
+
+    .regular { border-top-color: #16a34a; }
+    .extra { border-top-color: #d97706; }
+    .remaining { border-top-color: #7c3aed; }
+
+    #status {
+      margin: 18px 0;
+      color: #475569;
+      min-height: 20px;
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .links a {
+      text-decoration: none;
+      color: #1d4ed8;
+      background: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+
+    @media (max-width: 700px) {
+      body { padding: 16px; }
+      .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .number { font-size: 30px; }
+    }
+
+    @media (max-width: 430px) {
+      .cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <header>
+      <div>
+        <h1>Canteen Dashboard</h1>
+        <p class="subtitle">Meal service summary</p>
+      </div>
+      <button id="refreshButton" type="button">Refresh Data</button>
+    </header>
+
+    <section class="controls">
+      <div>
+        <label for="mealDate">Meal Date</label>
+        <input type="date" id="mealDate">
+      </div>
+
+      <div>
+        <label for="mealPeriod">Meal Period</label>
+        <select id="mealPeriod">
+          <option value="BREAKFAST">Breakfast</option>
+          <option value="LUNCH">Lunch</option>
+          <option value="DINNER">Dinner</option>
+        </select>
+      </div>
+
+      <button id="loadButton" type="button">Load Summary</button>
+    </section>
+
+    <p id="status" role="status" aria-live="polite">Loading summary...</p>
+
+    <section class="cards">
+      <article class="card">
+        <h2>Expected Meals</h2>
+        <div class="number" id="expectedMeals">—</div>
+      </article>
+
+      <article class="card">
+        <h2>Meals Served</h2>
+        <div class="number" id="mealsServed">—</div>
+      </article>
+
+      <article class="card remaining">
+        <h2>Remaining Meals</h2>
+        <div class="number" id="remainingMeals">—</div>
+      </article>
+
+      <article class="card regular">
+        <h2>Regular Meals Served</h2>
+        <div class="number" id="regularServed">—</div>
+      </article>
+
+      <article class="card extra">
+        <h2>Extra-Rice Meals Served</h2>
+        <div class="number" id="extraRiceServed">—</div>
+      </article>
+    </section>
+    
+<section style="margin-top: 24px; background: white; padding: 20px; border-radius: 14px; box-shadow: 0 3px 12px #1720330d;">
+  <h2 style="margin-top: 0;">Students Not Yet Served</h2>
+  <p style="color: #64748b;">Students with an assigned meal who have not claimed it.</p>
+
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+      <thead>
+        <tr>
+          <th style="padding: 12px; border-bottom: 1px solid #e2e8f0;">Student Code</th>
+          <th style="padding: 12px; border-bottom: 1px solid #e2e8f0;">Student Name</th>
+          <th style="padding: 12px; border-bottom: 1px solid #e2e8f0;">Sensei</th>
+          <th style="padding: 12px; border-bottom: 1px solid #e2e8f0;">Meal</th>
+        </tr>
+      </thead>
+      <tbody id="unservedBody">
+        <tr><td colspan="4" style="padding: 12px;">Loading students...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<nav class="links">
+  <a href="/">Open Meal Scanner</a>
+</nav>
+
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    // Use the computer's local date, not a UTC date.
+    function getLocalDate() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    $("mealDate").value = getLocalDate();
+
+    
+async function loadSummary() {
+  const date = $("mealDate").value;
+  const period = $("mealPeriod").value;
+
+  if (!date) {
+    $("status").textContent = "Please select a date.";
+    return;
+  }
+
+  $("status").textContent = "Loading dashboard...";
+  $("loadButton").disabled = true;
+  $("refreshButton").disabled = true;
+
+  try {
+    const query =
+      `date=${encodeURIComponent(date)}` +
+      `&period=${encodeURIComponent(period)}`;
+
+    const [summaryResponse, unservedResponse] = await Promise.all([
+      fetch(`/api/dashboard-summary?${query}`),
+      fetch(`/api/dashboard-unserved?${query}`)
+    ]);
+
+    const summary = await summaryResponse.json();
+    const unserved = await unservedResponse.json();
+
+    if (!summaryResponse.ok || !summary.success) {
+      throw new Error(summary.message || "Unable to load summary.");
+    }
+
+    if (!unservedResponse.ok || !unserved.success) {
+      throw new Error(unserved.message || "Unable to load unserved students.");
+    }
+
+    $("expectedMeals").textContent = summary.expectedMeals;
+    $("mealsServed").textContent = summary.mealsServed;
+    $("remainingMeals").textContent = summary.remainingMeals;
+    $("regularServed").textContent = summary.regularServed;
+    $("extraRiceServed").textContent = summary.extraRiceServed;
+
+    const body = $("unservedBody");
+    body.replaceChildren();
+
+    if (unserved.students.length === 0) {
+      const row = document.createElement("tr");
+      const cell = document.createElement("td");
+      cell.colSpan = 4;
+      cell.style.padding = "12px";
+      cell.textContent = "No unserved students for this meal period.";
+      row.appendChild(cell);
+      body.appendChild(row);
+    } else {
+      for (const student of unserved.students) {
+        const row = document.createElement("tr");
+
+        for (const value of [
+          student.studentCode,
+          student.fullName,
+          student.senseiName || "—",
+          student.mealType === "EXTRA_RICE" ? "Extra Rice" : "Regular"
+        ]) {
+          const cell = document.createElement("td");
+          cell.style.padding = "12px";
+          cell.style.borderBottom = "1px solid #e2e8f0";
+          cell.textContent = value;
+          row.appendChild(cell);
+        }
+
+        body.appendChild(row);
+      }
+    }
+
+    $("status").textContent =
+      `Updated ${new Date().toLocaleTimeString()} — ` +
+      `${period.toLowerCase()} · ${date} · ` +
+      `${unserved.count} student(s) not yet served.`;
+  } catch (error) {
+    $("status").textContent = `Error: ${error.message}`;
+  } finally {
+    $("loadButton").disabled = false;
+    $("refreshButton").disabled = false;
+  }
+}
+
+
+    $("loadButton").addEventListener("click", loadSummary);
+    $("refreshButton").addEventListener("click", loadSummary);
+    $("mealDate").addEventListener("change", loadSummary);
+    $("mealPeriod").addEventListener("change", loadSummary);
+
+    loadSummary();
+    let autoRefreshTimer;
+
+function restartAutoRefresh() {
+  clearInterval(autoRefreshTimer);
+  autoRefreshTimer = setInterval(loadSummary, 10000);
+}
+
+$("mealDate").addEventListener("change", restartAutoRefresh);
+$("mealPeriod").addEventListener("change", restartAutoRefresh);
+
+restartAutoRefresh();
+  </script>
+
+  
+<script>
+(async function protectCanteenPage() {
+  try {
+    const response = await fetch("/api/me", {
+      credentials: "same-origin",
+      cache: "no-store"
+    });
+
+    if (response.status === 401) {
+      window.location.replace("/login.html");
+      return;
+    }
+
+    if (!response.ok) {
+      document.body.innerHTML =
+        "<h2>Unable to verify login. Please refresh the page.</h2>";
+      return;
+    }
+
+    const data = await response.json();
+
+    const bar = document.createElement("div");
+    bar.style.cssText = [
+      "position:fixed",
+      "top:0",
+      "right:0",
+      "z-index:99999",
+      "display:flex",
+      "align-items:center",
+      "gap:12px",
+      "padding:10px 16px",
+      "background:#172033",
+      "color:white",
+      "font:14px Arial,sans-serif",
+      "border-radius:0 0 0 12px",
+      "box-shadow:0 2px 8px #0002"
+    ].join(";");
+
+    const operator = document.createElement("span");
+    operator.textContent =
+      "Signed in: " + (data.user.fullName || data.user.username);
+
+    const dashboard = document.createElement("a");
+    dashboard.href = "/dashboard.html";
+    dashboard.textContent = "Dashboard";
+    dashboard.style.color = "white";
+
+    const logout = document.createElement("button");
+    logout.type = "button";
+    logout.textContent = "Logout";
+    logout.style.cssText =
+      "padding:8px 12px;cursor:pointer;border:0;border-radius:6px";
+
+    logout.addEventListener("click", async () => {
+      logout.disabled = true;
+      logout.textContent = "Logging out...";
+
+      try {
+        const result = await fetch("/api/logout", {
+          method: "POST",
+          credentials: "same-origin"
+        });
+
+        if (result.ok) {
+          window.location.replace("/login.html");
+          return;
+        }
+
+        logout.disabled = false;
+        logout.textContent = "Logout";
+        alert("Unable to log out. Please try again.");
+      } catch {
+        logout.disabled = false;
+        logout.textContent = "Logout";
+        alert("Cannot connect to the server.");
+      }
+    });
+
+    bar.append(operator, dashboard, logout);
+    document.body.appendChild(bar);
+  } catch {
+    document.body.innerHTML =
+      "<h2>Cannot connect to the server. Please refresh the page.</h2>";
+  }
+})();
+</script>
+</body>
+</html>
+
+</body>
+</html>

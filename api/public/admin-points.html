@@ -1,0 +1,745 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Points Management | Canteen System</title>
+  <style>
+    :root {
+      --navy: #14213d;
+      --blue: #2563eb;
+      --bg: #f4f7fb;
+      --text: #172033;
+      --muted: #667085;
+      --border: #e5eaf2;
+      --green: #15803d;
+      --red: #b42318;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      background: var(--navy);
+      color: white;
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    header h1 { margin: 0; font-size: 21px; }
+    header p { margin: 5px 0 0; color: #cbd5e1; font-size: 13px; }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button, .nav-link {
+      border: 0;
+      border-radius: 8px;
+      padding: 11px 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .nav-link { background: #ffffff; color: var(--navy); }
+    .logout { background: #334155; color: white; }
+
+    main {
+      width: min(1100px, 94%);
+      margin: 28px auto;
+    }
+
+    .welcome {
+      color: var(--muted);
+      margin: 0 0 22px;
+      font-size: 14px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 3px 12px rgba(16, 24, 40, 0.04);
+      min-width: 0;
+    }
+
+    .card h2 { margin: 0 0 7px; font-size: 19px; }
+    .description { color: var(--muted); font-size: 13px; margin: 0 0 20px; line-height: 1.5; }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin: 16px 0 7px;
+    }
+
+    input, textarea {
+      width: 100%;
+      border: 1px solid #cfd6e2;
+      border-radius: 8px;
+      padding: 12px;
+      font: inherit;
+      background: white;
+      color: var(--text);
+    }
+
+    input:focus, textarea:focus {
+      outline: 2px solid #bfdbfe;
+      border-color: var(--blue);
+    }
+
+    textarea { resize: vertical; min-height: 85px; }
+
+    .search-results {
+      margin-top: 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+
+    .student-option {
+      display: block;
+      width: 100%;
+      border-radius: 0;
+      text-align: left;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      padding: 12px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .student-option:last-child { border-bottom: 0; }
+    .student-option:hover { background: #eff6ff; }
+    .student-option small { display: block; color: var(--muted); font-weight: 400; }
+    .empty { padding: 13px; color: var(--muted); font-size: 13px; }
+
+    .selected {
+      display: none;
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      border-radius: 10px;
+    }
+
+    .student-name { font-weight: 700; font-size: 17px; }
+    .student-code { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    .balance-label {
+      margin-top: 17px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .balance {
+      color: var(--green);
+      font-weight: 800;
+      font-size: 30px;
+      margin-top: 4px;
+      overflow-wrap: anywhere;
+    }
+
+    .primary {
+      width: 100%;
+      background: var(--blue);
+      color: white;
+      margin-top: 20px;
+    }
+
+    .primary:hover { background: #1d4ed8; }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+
+    .notice {
+      display: none;
+      padding: 12px 14px;
+      border-radius: 8px;
+      margin: 16px 0;
+      font-size: 13px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .notice.success { display: block; background: #dcfce7; color: #166534; }
+    .notice.error { display: block; background: #fee2e2; color: #991b1b; }
+    .notice.info { display: block; background: #dbeafe; color: #1e40af; }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    .summary-row span:first-child { color: var(--muted); }
+    .summary-row span:last-child { font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+
+    .history {
+      margin-top: 22px;
+      grid-column: 1 / -1;
+    }
+
+    .history-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .secondary { background: #eaf0f8; color: var(--navy); }
+
+    .table-wrap { overflow-x: auto; margin-top: 14px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 650px;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    th { background: #f8fafc; color: #475467; }
+
+    .positive { color: var(--green); font-weight: 700; }
+
+    .muted { color: var(--muted); }
+    .hidden { display: none !important; }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 24px;
+    }
+
+    @media (max-width: 760px) {
+      .layout { grid-template-columns: 1fr; }
+      .history { grid-column: auto; }
+      header { padding: 16px; }
+      main { margin-top: 18px; }
+      .card { padding: 17px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Canteen System</h1>
+      <p>Administrator · Student Points Management</p>
+    </div>
+    <div class="header-actions">
+      <a class="nav-link" href="/admin-students.html">Students</a>
+      <a class="nav-link" href="/dashboard.html">Dashboard</a>
+      <button class="logout" id="logoutButton" type="button">Log out</button>
+    </div>
+  </header>
+
+  <main>
+    <p class="welcome" id="welcomeText">Checking administrator session...</p>
+
+    <div id="pageContent" class="hidden">
+      <div class="layout">
+        <section class="card">
+          <h2>Add Student Points</h2>
+          <p class="description">
+            Search for a student, review the current balance, then record a points credit.
+          </p>
+
+          <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+          <label for="studentSearch">Find student</label>
+          <input id="studentSearch" type="search"
+                 placeholder="Search student code or full name..."
+                 autocomplete="off">
+          <div id="searchResults" class="search-results" aria-live="polite">
+            <div class="empty">Loading students...</div>
+          </div>
+
+          <div id="selectedStudent" class="selected">
+            <div class="student-name" id="studentName"></div>
+            <div class="student-code" id="studentCode"></div>
+            <div class="balance-label">Current points balance</div>
+            <div class="balance" id="currentBalance">0.00</div>
+          </div>
+
+          <form id="pointsForm">
+            <label for="pointsAmount">Points to add</label>
+            <input id="pointsAmount" name="points" type="number"
+                   min="0.01" max="1000000" step="0.01"
+                   placeholder="e.g. 500" required>
+
+            <label for="pointsReason">Reason for adjustment</label>
+            <textarea id="pointsReason" name="reason" maxlength="300"
+                      placeholder="e.g. Monthly allowance" required></textarea>
+
+            <button id="addButton" class="primary" type="submit" disabled>
+              Review and Add Points
+            </button>
+          </form>
+        </section>
+
+        <section class="card">
+          <h2>Adjustment Guidelines</h2>
+          <p class="description">
+            Review the details before confirming a points credit.
+          </p>
+
+          <div class="summary-row">
+            <span>Selected student</span>
+            <span id="reviewStudent">None selected</span>
+          </div>
+          <div class="summary-row">
+            <span>Points to add</span>
+            <span id="reviewPoints">0.00</span>
+          </div>
+          <div class="summary-row">
+            <span>Estimated new balance</span>
+            <span id="reviewBalance">0.00</span>
+          </div>
+          <div class="summary-row">
+            <span>Transaction type</span>
+            <span>ADMIN_CREDIT</span>
+          </div>
+
+          <p class="description" style="margin-top:20px;margin-bottom:0">
+            Every successful adjustment is recorded in the database with the
+            administrator, reason, previous balance, and new balance.
+            Do not refresh or resubmit if a request's outcome is unclear;
+            verify the transaction history first.
+          </p>
+        </section>
+
+        <section class="card history">
+          <div class="history-head">
+            <div>
+              <h2>Points Transaction History</h2>
+              <p class="description" style="margin:6px 0 0">
+                Administrator credits for the selected student.
+              </p>
+            </div>
+            <button class="secondary" id="refreshHistory" type="button">
+              Refresh
+            </button>
+          </div>
+
+          <div id="historyStatus" class="muted" style="margin-top:15px;font-size:13px">
+            Select a student to view transactions.
+          </div>
+
+          <div class="table-wrap">
+            <table id="historyTable" class="hidden">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Points</th>
+                  <th>Previous balance</th>
+                  <th>New balance</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody id="historyBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer>Canteen System · Administrator tools</footer>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    let students = [];
+    let selectedStudent = null;
+    let submitting = false;
+
+    const money = (value) =>
+      Number(value || 0).toLocaleString("en-PH", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+
+    function showNotice(message, type = "info") {
+      const el = $("notice");
+      el.textContent = message;
+      el.className = "notice " + type;
+    }
+
+    function clearNotice() {
+      $("notice").textContent = "";
+      $("notice").className = "notice";
+    }
+
+    async function apiFetch(url, options = {}) {
+      const response = await fetch(url, {
+        credentials: "same-origin",
+        ...options,
+        headers: {
+          ...(options.body ? { "Content-Type": "application/json" } : {}),
+          ...(options.headers || {})
+        }
+      });
+
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        throw new Error(
+          response.status === 404
+            ? "API endpoint not found. Check server.js and restart the server."
+            : "The server returned an unexpected response (HTTP " + response.status + ")."
+        );
+      }
+
+      const data = await response.json();
+
+      if (!response.ok || data.success === false) {
+        throw new Error(data.message || "Request failed.");
+      }
+
+      return data;
+    }
+
+    async function checkSession() {
+      try {
+        const data = await apiFetch("/api/me");
+
+        if (!data.user || data.user.role !== "ADMIN") {
+          window.location.replace("/login.html");
+          return false;
+        }
+
+        $("welcomeText").textContent =
+          "Logged in as " + (data.user.fullName || data.user.username) +
+          " · Administrator";
+        $("pageContent").classList.remove("hidden");
+        return true;
+      } catch (error) {
+        window.location.replace("/login.html");
+        return false;
+      }
+    }
+
+    function renderStudents(list) {
+      const results = $("searchResults");
+      results.replaceChildren();
+
+      if (!list.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "No students found.";
+        results.appendChild(empty);
+        return;
+      }
+
+      list.forEach((student) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "student-option";
+
+        const name = document.createElement("span");
+        name.textContent = student.FullName || "Unnamed student";
+
+        const detail = document.createElement("small");
+        detail.textContent =
+          (student.StudentCode || "No code") +
+          " · Balance: " + money(student.CurrentPoints) +
+          (Number(student.IsActive) === 1 ? "" : " · INACTIVE");
+
+        button.append(name, detail);
+
+        button.addEventListener("click", () => {
+          if (Number(student.IsActive) !== 1) {
+            showNotice("This student is inactive and cannot receive points.", "error");
+            return;
+          }
+
+          selectedStudent = student;
+          $("selectedStudent").style.display = "block";
+          $("studentName").textContent = student.FullName;
+          $("studentCode").textContent =
+            (student.StudentCode || "") +
+            (student.SenseiName ? " · Sensei: " + student.SenseiName : "");
+          $("currentBalance").textContent = money(student.CurrentPoints);
+          $("reviewStudent").textContent =
+            student.FullName + " (" + student.StudentCode + ")";
+          $("addButton").disabled = submitting;
+          clearNotice();
+          updateEstimate();
+          loadHistory();
+        });
+
+        results.appendChild(button);
+      });
+    }
+
+    async function loadStudents() {
+      try {
+        const data = await apiFetch("/api/admin/students");
+        students = Array.isArray(data.students) ? data.students : [];
+        renderStudents(students);
+      } catch (error) {
+        $("searchResults").textContent = error.message;
+        showNotice("Unable to load students: " + error.message, "error");
+      }
+    }
+
+    $("studentSearch").addEventListener("input", () => {
+      const query = $("studentSearch").value.trim().toLowerCase();
+      const filtered = students.filter((student) =>
+        String(student.StudentCode || "").toLowerCase().includes(query) ||
+        String(student.FullName || "").toLowerCase().includes(query)
+      );
+      renderStudents(filtered);
+    });
+
+    function updateEstimate() {
+      const amount = Number($("pointsAmount").value);
+      const validAmount =
+        Number.isFinite(amount) &&
+        amount > 0 &&
+        amount <= 1000000 &&
+        Math.round(amount * 100) === amount * 100;
+
+      $("reviewPoints").textContent = money(validAmount ? amount : 0);
+
+      const current = selectedStudent
+        ? Number(selectedStudent.CurrentPoints || 0)
+        : 0;
+
+      $("reviewBalance").textContent =
+        money(current + (validAmount ? amount : 0));
+    }
+
+    $("pointsAmount").addEventListener("input", updateEstimate);
+
+    $("refreshHistory").addEventListener("click", loadHistory);
+
+    async function loadHistory() {
+      if (!selectedStudent) {
+        $("historyStatus").textContent = "Select a student to view transactions.";
+        $("historyTable").classList.add("hidden");
+        return;
+      }
+
+      $("historyStatus").textContent = "Loading transaction history...";
+      $("historyTable").classList.add("hidden");
+      $("historyBody").replaceChildren();
+
+      try {
+        const data = await apiFetch(
+          "/api/admin/points/history/" + encodeURIComponent(selectedStudent.StudentID)
+        );
+
+        const transactions = Array.isArray(data.transactions)
+          ? data.transactions
+          : [];
+
+        if (!transactions.length) {
+          $("historyStatus").textContent = "No transactions found for this student.";
+          return;
+        }
+
+        transactions.forEach((transaction) => {
+          const row = document.createElement("tr");
+
+          const date = transaction.CreatedAt
+            ? new Date(transaction.CreatedAt).toLocaleString()
+            : "—";
+
+          [
+            date,
+            transaction.TransactionType || "—",
+            (Number(transaction.PointsChange) > 0 ? "+" : "") +
+              money(transaction.PointsChange),
+            money(transaction.BalanceBefore),
+            money(transaction.BalanceAfter),
+            transaction.Reason || "—"
+          ].forEach((value, index) => {
+            const cell = document.createElement("td");
+            cell.textContent = value;
+            if (index === 2 && Number(transaction.PointsChange) > 0) {
+              cell.className = "positive";
+            }
+            row.appendChild(cell);
+          });
+
+          $("historyBody").appendChild(row);
+        });
+
+        $("historyStatus").textContent =
+          transactions.length + " transaction(s) displayed.";
+        $("historyTable").classList.remove("hidden");
+      } catch (error) {
+        $("historyStatus").textContent =
+          "Transaction history API is not available yet. " + error.message;
+      }
+    }
+
+    $("pointsForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (submitting || !selectedStudent) {
+        showNotice("Please select an active student first.", "error");
+        return;
+      }
+
+      const points = Number($("pointsAmount").value);
+      const reason = $("pointsReason").value.trim();
+
+      if (
+        !Number.isFinite(points) ||
+        points <= 0 ||
+        points > 1000000 ||
+        Math.round(points * 100) !== points * 100
+      ) {
+        showNotice("Enter a valid points amount (up to two decimal places).", "error");
+        return;
+      }
+
+      if (!reason || reason.length > 300) {
+        showNotice("Enter a reason between 1 and 300 characters.", "error");
+        return;
+      }
+
+      const balanceBefore = Number(selectedStudent.CurrentPoints || 0);
+      const balanceAfter = balanceBefore + points;
+
+      const confirmed = window.confirm(
+        "CONFIRM POINTS ADJUSTMENT\n\n" +
+        "Student: " + selectedStudent.FullName + "\n" +
+        "Student code: " + selectedStudent.StudentCode + "\n" +
+        "Current balance: " + money(balanceBefore) + "\n" +
+        "Points to add: +" + money(points) + "\n" +
+        "Estimated new balance: " + money(balanceAfter) + "\n" +
+        "Reason: " + reason + "\n\n" +
+        "Proceed with this adjustment?"
+      );
+
+      if (!confirmed) return;
+
+      submitting = true;
+      $("addButton").disabled = true;
+      $("addButton").textContent = "Submitting...";
+      clearNotice();
+
+      try {
+        const data = await apiFetch("/api/admin/points/add", {
+          method: "POST",
+          body: JSON.stringify({
+            studentId: selectedStudent.StudentID,
+            points,
+            reason
+          })
+        });
+
+        const returnedStudent = data.student || {};
+        const transaction = data.transaction || {};
+
+        showNotice(
+          "Points added successfully. " +
+          (returnedStudent.fullName || selectedStudent.FullName) +
+          ": " + money(transaction.balanceBefore) +
+          " → " + money(transaction.balanceAfter) + " points.",
+          "success"
+        );
+
+        $("pointsForm").reset();
+
+        // Refresh the student's balance from the database.
+        await loadStudents();
+
+        const refreshedStudent = students.find(
+          (student) =>
+            Number(student.StudentID) === Number(selectedStudent.StudentID)
+        );
+
+        if (refreshedStudent) {
+          selectedStudent = refreshedStudent;
+          $("selectedStudent").style.display = "block";
+          $("studentName").textContent = refreshedStudent.FullName;
+          $("studentCode").textContent =
+            (refreshedStudent.StudentCode || "") +
+            (refreshedStudent.SenseiName
+              ? " · Sensei: " + refreshedStudent.SenseiName
+              : "");
+          $("currentBalance").textContent = money(refreshedStudent.CurrentPoints);
+          $("reviewStudent").textContent =
+            refreshedStudent.FullName + " (" + refreshedStudent.StudentCode + ")";
+          updateEstimate();
+          await loadHistory();
+        } else {
+          selectedStudent = null;
+          $("selectedStudent").style.display = "none";
+          $("reviewStudent").textContent = "None selected";
+          $("currentBalance").textContent = "0.00";
+          $("reviewBalance").textContent = "0.00";
+          $("reviewPoints").textContent = "0.00";
+        }
+
+      } catch (error) {
+        showNotice(
+          error.message +
+          " If the request outcome is uncertain, check the database before retrying.",
+          "error"
+        );
+      } finally {
+        submitting = false;
+        $("addButton").textContent = "Review and Add Points";
+        $("addButton").disabled = !selectedStudent;
+      }
+    });
+
+    $("logoutButton").addEventListener("click", async () => {
+      if (!window.confirm("Are you sure you want to log out?")) return;
+
+      try {
+        await apiFetch("/api/logout", { method: "POST" });
+      } catch (error) {
+        // Redirect to login even if the logout response cannot be parsed.
+      }
+
+      window.location.replace("/login.html");
+    });
+
+    (async function init() {
+      const authenticated = await checkSession();
+      if (authenticated) await loadStudents();
+    })();
+  </script>
+</body>
+</html>

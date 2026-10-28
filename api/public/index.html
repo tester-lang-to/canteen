@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canteen Automatic Meal Scanner</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#172033}header{background:#142b4a;color:white;padding:20px}header h1{margin:0 0 6px;font-size:24px}header p{margin:0;color:#cbd5e1}main{max-width:960px;margin:24px auto;padding:0 16px}.panel{background:white;border-radius:14px;padding:22px;margin-bottom:18px;box-shadow:0 3px 14px #0f172a0d}label{display:block;font-weight:bold;margin:14px 0 7px}input,button{width:100%;padding:13px;border-radius:8px;border:1px solid #cbd5e1;font-size:16px}button{cursor:pointer;border:0;font-weight:bold}button:disabled{opacity:.55;cursor:not-allowed}.primary{background:#1763d1;color:white;margin-top:14px}.secondary{background:#e2e8f0;color:#172033;margin-top:10px}.student{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.photo{width:110px;height:110px;border-radius:12px;object-fit:cover;background:#e2e8f0}.name{font-size:23px;font-weight:bold}.muted{color:#64748b}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{padding:15px;background:#f1f5f9;border-radius:10px}.stat strong{display:block;margin-top:8px;font-size:20px;overflow-wrap:anywhere}.status{padding:14px;border-radius:8px;margin-top:14px;font-weight:bold}.ok{background:#dcfce7;color:#166534}.warn{background:#fef3c7;color:#92400e}.bad{background:#fee2e2;color:#991b1b}.scan-input{font-size:20px;padding:17px}.schedule-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.schedule-card{border:1px solid #e2e8f0;border-radius:10px;padding:12px}.schedule-card label{margin-top:8px}.schedule-card input{padding:10px}.schedule-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.schedule-heading button{width:auto;padding:9px 12px}.small{font-size:13px;font-weight:normal}[hidden]{display:none!important}@media(max-width:650px){.stats,.schedule-grid{grid-template-columns:1fr}main{margin-top:14px}}
+</style>
+</head>
+<body>
+<header><h1>Canteen Automatic Meal Scanner</h1><p>Scan a student ID to automatically verify and claim a registered meal</p></header>
+<main>
+<section class="panel">
+<h2>Scan Student ID</h2><p class="muted">Click the scan box, then scan the QR code. A scanner that types the code and presses Enter works automatically.</p>
+<label for="qr">Student QR Code</label><input id="qr" class="scan-input" autocomplete="off" placeholder="Click here, then scan student ID" autofocus>
+<div id="message" class="status warn" role="status" aria-live="polite">Checking current meal service hours…</div>
+<p class="muted small">Uses this computer's local date and time. No Claim button is required.</p>
+</section>
+<section class="panel" id="details" hidden>
+<div class="student"><img class="photo" id="photo" alt="Student photo" hidden><div><div class="name" id="name"></div><div id="studentCode"></div><div id="sensei" class="muted"></div></div></div>
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0">
+<div class="stats"><div class="stat">Registered Meal<strong id="meal">—</strong></div><div class="stat">Meal Price<strong id="price">—</strong></div><div class="stat">Points Balance<strong id="balance">—</strong></div></div>
+<div id="claimStatus" class="status warn" aria-live="polite"></div>
+</section>
+<section class="panel">
+<div class="schedule-heading"><div><h2 style="margin:0 0 6px">Meal Service Schedule</h2><p class="muted small" style="margin:0">Editable on this computer and saved in this browser.</p></div><button class="secondary" id="toggleSchedule" type="button">Show schedule settings</button></div>
+<div id="scheduleSettings" hidden><div class="schedule-grid">
+<div class="schedule-card"><strong>Breakfast</strong><label for="breakfastStart">Start time</label><input type="time" id="breakfastStart" value="05:00"><label for="breakfastEnd">End time</label><input type="time" id="breakfastEnd" value="09:00"></div>
+<div class="schedule-card"><strong>Lunch</strong><label for="lunchStart">Start time</label><input type="time" id="lunchStart" value="11:00"><label for="lunchEnd">End time</label><input type="time" id="lunchEnd" value="14:00"></div>
+<div class="schedule-card"><strong>Dinner</strong><label for="dinnerStart">Start time</label><input type="time" id="dinnerStart" value="17:00"><label for="dinnerEnd">End time</label><input type="time" id="dinnerEnd" value="19:00"></div>
+</div><button class="primary" id="saveSchedule" type="button">Save schedule</button><button class="secondary" id="resetSchedule" type="button">Restore default times</button><p class="muted small">Start time is included; end time is excluded. The periods cannot overlap.</p></div>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let busy=false;
+const defaults=()=>({BREAKFAST:{start:"05:00",end:"09:00",label:"Breakfast"},LUNCH:{start:"11:00",end:"14:00",label:"Lunch"},DINNER:{start:"17:00",end:"19:00",label:"Dinner"}});
+let schedule=defaults();
+function localDate(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+function localTime(){const d=new Date();return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`}
+function mins(t){if(!/^\d{2}:\d{2}$/.test(t||""))return NaN;const [h,m]=t.split(":").map(Number);return h>23||m>59?NaN:h*60+m}
+function msg(t,type="warn"){$("message").className="status "+type;$("message").textContent=t}
+function claimMsg(t,type="warn"){$("claimStatus").className="status "+type;$("claimStatus").textContent=t}
+function peso(v){return "₱"+Number(v).toFixed(2)}
+function renderInputs(){for(const p of Object.keys(schedule)){const k=p.toLowerCase();$(k+"Start").value=schedule[p].start;$(k+"End").value=schedule[p].end}}
+function loadSchedule(){try{const saved=JSON.parse(localStorage.getItem("canteenMealScheduleV1")||"null");if(saved)for(const p of Object.keys(schedule))if(saved[p]&&typeof saved[p].start==="string"&&typeof saved[p].end==="string"){schedule[p].start=saved[p].start;schedule[p].end=saved[p].end}}catch(e){console.warn(e)}renderInputs()}
+function readInputs(){const next={};for(const p of Object.keys(schedule)){const k=p.toLowerCase(),start=$(k+"Start").value,end=$(k+"End").value;if(!Number.isFinite(mins(start))||!Number.isFinite(mins(end))||mins(start)>=mins(end))throw Error(`${schedule[p].label}: start time must be earlier than end time.`);next[p]={start,end,label:schedule[p].label}}const r=Object.keys(next).map(p=>({p,start:mins(next[p].start),end:mins(next[p].end),label:next[p].label})).sort((a,b)=>a.start-b.start);for(let i=1;i<r.length;i++)if(r[i].start<r[i-1].end)throw Error(`${r[i].label} overlaps ${r[i-1].label}.`);return next}
+function saveSchedule(){try{schedule=readInputs();localStorage.setItem("canteenMealScheduleV1",JSON.stringify(schedule));msg("Meal schedule saved on this computer.","ok");updateServiceStatus()}catch(e){msg(e.message,"bad")}}
+function activePeriod(){const n=mins(localTime());for(const p of Object.keys(schedule))if(n>=mins(schedule[p].start)&&n<mins(schedule[p].end))return p;return null}
+function updateServiceStatus(){const p=activePeriod();msg(p?`${schedule[p].label.toUpperCase()} SERVICE OPEN — scan a student ID to process the order automatically.`:"MEAL SERVICE IS CLOSED — scans will not be claimed outside configured meal hours.",p?"ok":"bad")}
+function clearDetails(){$("details").hidden=true;$("photo").hidden=true;$("photo").removeAttribute("src")}
+function displayStudent(data){const s=data.student,m=data.meal;$("details").hidden=false;$("name").textContent=s.fullName||"Unknown student";$("studentCode").textContent="Student code: "+(s.studentCode||"—");$("sensei").textContent="Sensei: "+(s.senseiName||"Not assigned");$("balance").textContent=peso(s.currentPoints);const photo=$("photo");photo.hidden=true;photo.removeAttribute("src");if(s.photoPath){photo.onload=()=>photo.hidden=false;photo.onerror=()=>photo.hidden=true;photo.src=s.photoPath}if(!m){$("meal").textContent="Not registered";$("price").textContent="—"}else{$("meal").textContent=m.mealType==="NONE"?"None":m.mealType.replace("_"," ");$("price").textContent=m.price==null?"Unavailable":peso(m.price)}}
+async function scanStudent(){if(busy)return;const qr=$("qr").value.trim();if(!qr)return;busy=true;$("qr").disabled=true;clearDetails();const period=activePeriod();if(!period){msg("MEAL SERVICE IS CLOSED — no meal was claimed and no points were deducted.","bad");finishScan();return}const date=localDate();msg(`Checking ${schedule[period].label.toLowerCase()} order…`,"warn");
+try{
+const pr=await fetch(`/api/meal-preview/${encodeURIComponent(qr)}?date=${encodeURIComponent(date)}&period=${encodeURIComponent(period)}`,{credentials:"same-origin",cache:"no-store"});const data=await pr.json();if(!pr.ok||!data.success)throw Error(data.message||"Student not found or inactive.");displayStudent(data);const s=data.student,m=data.meal;
+if(!m){claimMsg(`NO ${period} ORDER REGISTERED — no meal was claimed and no points were deducted.`,"bad");msg(`NO ${period} ORDER REGISTERED — ${s.fullName}.`,"bad");return}
+if(m.mealType==="NONE"){claimMsg(`NO ${period} ORDER REGISTERED — student selected NONE. No points were deducted.`,"bad");msg(`NO ${period} ORDER REGISTERED — ${s.fullName}.`,"bad");return}
+if(data.alreadyClaimed){claimMsg(`${period} ALREADY CLAIMED — do not serve this meal again.`,"bad");msg(`DUPLICATE CLAIM BLOCKED — ${s.fullName}.`,"bad");return}
+if(m.price==null){claimMsg("MEAL PRICE NOT CONFIGURED — contact an administrator.","bad");msg("Meal price unavailable. Claim blocked.","bad");return}
+if(Number(s.currentPoints)<Number(m.price)){claimMsg(`INSUFFICIENT POINTS — needs ${peso(m.price)}; balance is ${peso(s.currentPoints)}.`,"bad");msg(`INSUFFICIENT POINTS — ${s.fullName}. No points were deducted.`,"bad");return}
+if(activePeriod()!==period){claimMsg("MEAL SERVICE IS CLOSED — no points were deducted.","bad");msg("MEAL SERVICE IS CLOSED.","bad");return}
+claimMsg(`Valid ${schedule[period].label.toLowerCase()} order found. Claiming automatically…`,"warn");msg(`Processing ${period.toLowerCase()} claim for ${s.fullName}…`,"warn");
+const cr=await fetch("/api/claim",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({qrCode:qr,mealDate:date,mealPeriod:period})});const result=await cr.json();if(!cr.ok||!result.success){const reason=result.Message||result.message||result.ErrorCode||result.Result||"Claim was rejected.";claimMsg(reason,"bad");msg(reason,"bad");return}
+const after=Number(result.PointsAfter);if(Number.isFinite(after))$("balance").textContent=peso(after);claimMsg(`MEAL CLAIMED SUCCESSFULLY — ${result.FullName||s.fullName}, ${period}. Deducted ${peso(result.PointsDeducted)}. Remaining balance: ${Number.isFinite(after)?peso(after):"updated"}.`,"ok");msg(`SUCCESS — ${s.fullName}'s ${period.toLowerCase()} meal was claimed automatically.`,"ok")
+}catch(e){claimMsg(e.message||"Unable to process this scan.","bad");msg(e.message||"Unable to process this scan.","bad")}finally{finishScan()}}
+function finishScan(){busy=false;$("qr").disabled=false;$("qr").value="";$("qr").focus()}
+$("qr").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();scanStudent()}});
+$("toggleSchedule").addEventListener("click",()=>{$("scheduleSettings").hidden=!$("scheduleSettings").hidden;$("toggleSchedule").textContent=$("scheduleSettings").hidden?"Show schedule settings":"Hide schedule settings"});
+$("saveSchedule").addEventListener("click",saveSchedule);
+$("resetSchedule").addEventListener("click",()=>{schedule=defaults();renderInputs();try{localStorage.removeItem("canteenMealScheduleV1")}catch{}msg("Default meal times restored.","ok");updateServiceStatus()});
+loadSchedule();updateServiceStatus();$("qr").focus();setInterval(()=>{if(!busy&&$("details").hidden)updateServiceStatus()},15000);
+</script>
+<script>
+(async function protectCanteenPage(){try{const r=await fetch("/api/me",{credentials:"same-origin",cache:"no-store"});if(r.status===401){window.location.replace("/login.html");return}if(!r.ok){document.body.innerHTML="<h2>Unable to verify login. Please refresh the page.</h2>";return}const d=await r.json(),bar=document.createElement("div");bar.style.cssText="position:fixed;top:0;right:0;z-index:99999;display:flex;align-items:center;gap:12px;padding:10px 16px;background:#172033;color:white;font:14px Arial,sans-serif;border-radius:0 0 0 12px;box-shadow:0 2px 8px #0002";const op=document.createElement("span");op.textContent="Signed in: "+(d.user.fullName||d.user.username);const dash=document.createElement("a");dash.href="/dashboard.html";dash.textContent="Dashboard";dash.style.color="white";const out=document.createElement("button");out.type="button";out.textContent="Logout";out.style.cssText="width:auto;padding:8px 12px;cursor:pointer;border:0;border-radius:6px";out.addEventListener("click",async()=>{out.disabled=true;out.textContent="Logging out...";try{const x=await fetch("/api/logout",{method:"POST",credentials:"same-origin"});if(x.ok){window.location.replace("/login.html");return}out.disabled=false;out.textContent="Logout";alert("Unable to log out. Please try again.")}catch{out.disabled=false;out.textContent="Logout";alert("Cannot connect to the server.")}});bar.append(op,dash,out);document.body.appendChild(bar)}catch{document.body.innerHTML="<h2>Cannot connect to the server. Please refresh the page.</h2>"}})();
+</script>
+</body>
+</html>
